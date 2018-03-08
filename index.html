@@ -5,7 +5,7 @@
   <!-- Basic Page Needs
   –––––––––––––––––––––––––––––––––––––––––––––––––– -->
   <meta charset="utf-8">
-  <title>Static Website</title>
+  <title>Radio days</title>
   <meta name="description" content="">
   <meta name="author" content="">
 
@@ -22,17 +22,144 @@
   <!-- Favicon
   –––––––––––––––––––––––––––––––––––––––––––––––––– -->
   <link rel="icon" type="image/png" href="images/favicon.png">
+  
 
 </head>
 <body>
+<script src="//d3js.org/d3.v3.min.js"></script>
+<script src="//d3js.org/queue.v1.min.js"></script>
+<script src="//d3js.org/topojson.v1.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
 
   <!-- Primary Page Layout
   –––––––––––––––––––––––––––––––––––––––––––––––––– -->
   <div class="container">
     <div class="row">
-      <div class="one-half column" style="margin-top: 25%">
-        <h4>Subtitle</h4>
-        <p>Hello goodbye.</p>
+      <div class="one-half column" style="margin-top: 5%">
+        <h1>Radio Days</h1>
+      </div>
+    </div>
+    <div class="row">
+      <div class="twelve columns">
+        <p id="playing">Click on a bubble to listen to the radio station's livestream.</p>
+        <script type="text/javascript">
+          var width  = 900,height = 600;
+
+          var rateById = d3.map();
+
+          var color = d3.scale.linear()
+              .domain([-90, -17.42, 80])
+              .range(["#D7655E","#f7f7c0","#77969A"]);
+
+          var projection = d3.geo.albersUsa()
+              .scale(1280)
+              .translate([width / 2, height / 2]);
+
+          var path = d3.geo.path()
+              .projection(projection);
+
+          var svg = d3.select("body").append("svg")
+              .attr("width", width)
+              .attr("height", height);
+
+          queue()
+              .defer(d3.json, "us-counties.json")
+              .defer(d3.tsv, "partisanship.tsv", function(d) { rateById.set(d.id, +d.rate); })
+              .await(ready);
+
+          function ready(error, us) {
+            if (error) throw error;
+
+            svg.append("g")
+                .attr("class", "counties")
+                .selectAll("path")
+                .data(topojson.feature(us, us.objects.counties).features)
+                .enter().append("path")
+                // .attr("fill", function(d) { return color(rateById.get(d.id)); })
+                .attr("fill", "#77969A")
+                .attr("d", path)
+                // .on("mouseover", function(){ 
+                //     d3.select(this).style("fill", "aliceblue"); 
+                // })
+                // .on("mouseout", function(){ 
+                //     d3.select(this).style("fill", function(d) { 
+                //         return color(rateById.get(d.id)); 
+                //     }); 
+                // })                
+                // .on("mouseover", function(){ 
+                //     d3.select(this).style("fill", "aliceblue"); 
+                // })
+                // .on("mouseout", function(){ 
+                //     d3.select(this).style("fill", "#77969A"); 
+                // })
+
+            svg.append("path")
+                .datum(topojson.mesh(us, us.objects.states, function(a, b) { return a !== b; }))
+                .attr("class", "states")
+                .attr("d", path);
+
+
+            d3.csv("dataRadio.csv", function(error, radio) {
+              var station = svg.selectAll("g.station")
+              .data(radio)
+              .enter()
+              .append("g")
+              .attr("class", "station")
+              .attr("transform", function(d) { return "translate(" + projection([d.long, d.lat]) + ")"; });
+
+              station.append("circle")
+              .attr("r", 10)
+              .style("fill", "#f7f7c0")
+              .style("opacity", 0.45)
+              .on("mouseover", function(){ 
+                  d3.select(this).style("opacity", 1); 
+              })              
+              .on("mouseout", function(){ 
+                  d3.select(this).style("opacity", 0.45); 
+              })
+              .on("click", function(d) { 
+                var audioElement = document.createElement('audio');
+                audioElement.setAttribute('src', d.live);
+                audioElement.play();
+                setTimeout(function() { audioElement.pause()}, 5000);
+                document.getElementById("playing").innerHTML = "Listening to: " + d.name
+              })
+
+              station.append("text")
+              .attr("x", 5)
+              .text(function(d) { return d.name; })
+              .style("fill", "#000")
+              .style("font-family", "Inter UI")
+              .style("font-size", "10px")
+              .style("font-weight", "600");
+              
+              // var ls_w = 20, ls_h = 20;
+              // var legend = svg.selectAll("g.legend")
+              // .data(radio)
+              // .enter()
+              // .append("g")
+              // .attr("class", "legend");
+
+              // legend.append("rect")
+              // .attr("x", 20)
+              // .attr("y", function(d, i){ return height - (i*ls_h) - 2*ls_h;})
+              // .attr("width", ls_w)
+              // .attr("height", ls_h)
+              // .style("fill", function(d, i) { return color(d); })
+              // .style("opacity", 0.8);
+
+              // legend.append("text")
+              // .attr("x", 50)
+              // .attr("y", function(d, i){ return height - (i*ls_h) - ls_h - 4;})
+              // .text(function(d){ return d.band; });
+
+
+            });   
+
+
+          }
+
+        </script>
       </div>
     </div>
   </div>
