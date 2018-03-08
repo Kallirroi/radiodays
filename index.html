@@ -43,7 +43,7 @@
       <div class="twelve columns">
         <p id="playing">Click on a bubble to listen to the radio station's livestream.</p>
         <script type="text/javascript">
-          var width  = 900,height = 600;
+          var width  = 900,height = 590;
 
           var rateById = d3.map();
 
@@ -70,28 +70,39 @@
           function ready(error, us) {
             if (error) throw error;
 
+            // svg.append("g")
+            //     .attr("class", "counties")
+            //     .selectAll("path")
+            //     .data(topojson.feature(us, us.objects.counties).features)
+            //     .enter().append("path")
+            //     .attr("fill", "#77969A")
+            //     .attr("d", path)
+            //                     .on("mouseover", function(){ 
+            //         d3.select(this).style("fill", "aliceblue"); 
+            //     })
+            //     .on("mouseover", function(){ 
+            //         d3.select(this).style("fill", "aliceblue"); 
+            //     })
+            //     .on("mouseout", function(){ 
+            //         d3.select(this).style("fill", "#77969A"); 
+            //     })     
+
             svg.append("g")
                 .attr("class", "counties")
                 .selectAll("path")
                 .data(topojson.feature(us, us.objects.counties).features)
                 .enter().append("path")
-                // .attr("fill", function(d) { return color(rateById.get(d.id)); })
-                .attr("fill", "#77969A")
+                .attr("fill", function(d) { return color(rateById.get(d.id)); })
                 .attr("d", path)
-                // .on("mouseover", function(){ 
-                //     d3.select(this).style("fill", "aliceblue"); 
-                // })
-                // .on("mouseout", function(){ 
-                //     d3.select(this).style("fill", function(d) { 
-                //         return color(rateById.get(d.id)); 
-                //     }); 
-                // })                
-                // .on("mouseover", function(){ 
-                //     d3.select(this).style("fill", "aliceblue"); 
-                // })
-                // .on("mouseout", function(){ 
-                //     d3.select(this).style("fill", "#77969A"); 
-                // })
+                .on("mouseover", function(){ 
+                    d3.select(this).style("fill", "aliceblue"); 
+                })
+                .on("mouseout", function(){ 
+                    d3.select(this).style("fill", function(d) { 
+                        return color(rateById.get(d.id)); 
+                    }); 
+                })     
+
 
             svg.append("path")
                 .datum(topojson.mesh(us, us.objects.states, function(a, b) { return a !== b; }))
@@ -109,7 +120,7 @@
 
               station.append("circle")
               .attr("r", 10)
-              .style("fill", "#f7f7c0")
+              .style("fill", "#000")
               .style("opacity", 0.45)
               .on("mouseover", function(){ 
                   d3.select(this).style("opacity", 1); 
