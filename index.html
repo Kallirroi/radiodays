@@ -41,27 +41,24 @@
     </div>
     <div class="row">
       <div class="twelve columns">
-        <p id="playing">Click on a bubble to listen to the radio station's livestream.</p>
+        <div id="playing">Click on a bubble to listen to the radio station's livestream.</div>
+        <div id="hovering">Hover over station to reveal name. </div>
         <script type="text/javascript">
+
+          // -------------------------------------------- Setup
           var width  = 900,height = 590;
-
           var rateById = d3.map();
-
           var color = d3.scale.linear()
               .domain([-90, -17.42, 80])
-              .range(["#D7655E","#f7f7c0","#77969A"]);
-
+              .range(["#D7655E","#f2f2d7","#77969A"]);
           var projection = d3.geo.albersUsa()
               .scale(1280)
               .translate([width / 2, height / 2]);
-
           var path = d3.geo.path()
               .projection(projection);
-
           var svg = d3.select("body").append("svg")
               .attr("width", width)
               .attr("height", height);
-
           queue()
               .defer(d3.json, "us-counties.json")
               .defer(d3.tsv, "partisanship.tsv", function(d) { rateById.set(d.id, +d.rate); })
@@ -70,6 +67,7 @@
           function ready(error, us) {
             if (error) throw error;
 
+            // -------------------------------------------- Simple
             // svg.append("g")
             //     .attr("class", "counties")
             //     .selectAll("path")
@@ -77,15 +75,15 @@
             //     .enter().append("path")
             //     .attr("fill", "#77969A")
             //     .attr("d", path)
-            //                     .on("mouseover", function(){ 
-            //         d3.select(this).style("fill", "aliceblue"); 
-            //     })
             //     .on("mouseover", function(){ 
             //         d3.select(this).style("fill", "aliceblue"); 
             //     })
             //     .on("mouseout", function(){ 
             //         d3.select(this).style("fill", "#77969A"); 
             //     })     
+
+
+            // -------------------------------------------- Partisanship
 
             svg.append("g")
                 .attr("class", "counties")
@@ -111,39 +109,48 @@
 
 
             d3.csv("dataRadio.csv", function(error, radio) {
+
+              // -------------------------------------------- Station
               var station = svg.selectAll("g.station")
-              .data(radio)
-              .enter()
-              .append("g")
-              .attr("class", "station")
-              .attr("transform", function(d) { return "translate(" + projection([d.long, d.lat]) + ")"; });
+                .data(radio)
+                .enter()
+                .append("g")
+                .attr("class", "station")
+                .attr("transform", function(d) { return "translate(" + projection([d.long, d.lat]) + ")"; });
+
 
               station.append("circle")
-              .attr("r", 10)
-              .style("fill", "#000")
-              .style("opacity", 0.45)
-              .on("mouseover", function(){ 
-                  d3.select(this).style("opacity", 1); 
-              })              
-              .on("mouseout", function(){ 
-                  d3.select(this).style("opacity", 0.45); 
-              })
-              .on("click", function(d) { 
-                var audioElement = document.createElement('audio');
-                audioElement.setAttribute('src', d.live);
-                audioElement.play();
-                setTimeout(function() { audioElement.pause()}, 5000);
-                document.getElementById("playing").innerHTML = "Listening to: " + d.name
-              })
+                .attr("r", 10)
+                .style("fill", "#000")
+                .style("opacity", 0.45)
+                .on("mouseover", function(d){ 
+                    d3.select(this).style("opacity", 1); 
+                    document.getElementById("hovering").innerHTML = d.name;
+                })              
+                .on("mouseout", function(d){ 
+                    d3.select(this).style("opacity", 0.45); 
+                    document.getElementById("hovering").innerHTML = "Hover over station to reveal name.";
+                })
+                .on("click", function(d) { 
+                  var audioElement = document.createElement('audio');
+                  audioElement.setAttribute('src', d.live);
+                  audioElement.play();
+                  setTimeout(function() { audioElement.pause()}, 5000);
+                  document.getElementById("playing").innerHTML = "Listening to: " + d.name;
+                })
 
-              station.append("text")
-              .attr("x", 5)
-              .text(function(d) { return d.name; })
-              .style("fill", "#000")
-              .style("font-family", "Inter UI")
-              .style("font-size", "10px")
-              .style("font-weight", "600");
+              // -------------------------------------------- Text
+
+              // station.append("text")
+              //   .attr("x", 5)
+              //   .text(function(d) { return d.name; })
+              //   .style("fill", "#000")
+              //   .style("font-family", "Inter UI")
+              //   .style("font-size", "10px")
+              //   .style("font-weight", "600");
               
+              // -------------------------------------------- Legend
+
               // var ls_w = 20, ls_h = 20;
               // var legend = svg.selectAll("g.legend")
               // .data(radio)

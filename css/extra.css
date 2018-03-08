@@ -23,6 +23,6 @@ g.station {
 	cursor: pointer;
 }
 
-#playing {
-	text-align: center;
+#playing, #hovering {
+	text-align: right;
 }
