@@ -81,13 +81,13 @@
                 .selectAll("path")
                 .data(topojson.feature(us, us.objects.counties).features)
                 .enter().append("path")
-                .attr("fill", "#77969A")
+                .attr("fill", "#DCE0E6")
                 .attr("d", path)
                 .on("mouseover", function(){ 
                     d3.select(this).style("fill", "aliceblue"); 
                 })
                 .on("mouseout", function(){ 
-                    d3.select(this).style("fill", "#77969A"); 
+                    d3.select(this).style("fill", "#DCE0E6"); 
                 })     
 
 
@@ -131,28 +131,28 @@
 
               market.append("circle")
                 .attr("r", function(d) { return d.limbaughAffiliate * 5;})
-                .style("fill", "#D38C80")
+                .style("fill", "#D66B53")
                 .attr("class", "limbaughAffiliate")
-                .style("opacity", 0.55)
+                .style("opacity", 0.35)
                 .on("mouseover", function(d){ 
                     d3.select(this).style("opacity", 0.85); 
                     document.getElementById("hovering").innerHTML = d.name;
                 })              
                 .on("mouseout", function(d){ 
-                    d3.select(this).style("opacity", 0.55); 
+                    d3.select(this).style("opacity", 0.35); 
                 })
 
                 market.append("circle")
                 .attr("r", function(d) { return d.fasAffiliate * 5;})
-                .style("fill", "#C9DBED")
+                .style("fill", "#6C7C9E")
                 .attr("class", "fasAffiliate")
-                .style("opacity", 0.55)
+                .style("opacity", 0.35)
                 .on("mouseover", function(d){ 
                     d3.select(this).style("opacity", 0.85); 
                     document.getElementById("hovering").innerHTML = d.name;
                 })              
                 .on("mouseout", function(d){ 
-                    d3.select(this).style("opacity", 0.55); 
+                    d3.select(this).style("opacity", 0.35); 
                 })
 
               // -------------------------------------------- Text
@@ -190,16 +190,16 @@
               // -------------------------------------------- Button
 
               d3.select("#modeL").on("click", function(d) { 
-                d3.selectAll(".limbaughAffiliate").transition().delay(400).style("opacity", 0.55)
+                d3.selectAll(".limbaughAffiliate").transition().delay(400).style("opacity", 0.35)
                 d3.selectAll(".fasAffiliate").transition().delay(400).style("opacity", 0)
               })              
               d3.select("#modeNPR").on("click", function(d) { 
-                d3.selectAll(".fasAffiliate").transition().delay(400).style("opacity", 0.55)
+                d3.selectAll(".fasAffiliate").transition().delay(400).style("opacity", 0.35)
                 d3.selectAll(".limbaughAffiliate").transition().delay(400).style("opacity", 0)
               })
               d3.select("#both").on("click", function(d) { 
-                d3.selectAll(".fasAffiliate").transition().delay(400).style("opacity", 0.55)
-                d3.selectAll(".limbaughAffiliate").transition().delay(400).style("opacity", 0.55)
+                d3.selectAll(".fasAffiliate").transition().delay(400).style("opacity", 0.35)
+                d3.selectAll(".limbaughAffiliate").transition().delay(400).style("opacity", 0.35)
               })
 
             });   
