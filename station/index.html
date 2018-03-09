@@ -5,7 +5,7 @@
   <!-- Basic Page Needs
   –––––––––––––––––––––––––––––––––––––––––––––––––– -->
   <meta charset="utf-8">
-  <title>Radio days</title>
+  <title>Radio days - Station</title>
   <meta name="description" content="">
   <meta name="author" content="">
 
@@ -36,7 +36,7 @@
   <div class="container">
     <div class="row">
       <div class="one-half column" style="margin-top: 5%">
-        <h1>Radio Days</h1>
+        <h1>Radio Days - Station</h1>
       </div>
     </div>
     <div class="row">
@@ -47,7 +47,7 @@
 
           // -------------------------------------------- Setup
           var width  = 900,height = 590;
-          var rateById = d3.map();
+          var partisanship = d3.map();
           var color = d3.scale.linear()
               .domain([-90, -17.42, 80])
               .range(["#D7655E","#f2f2d7","#77969A"]);
@@ -61,7 +61,7 @@
               .attr("height", height);
           queue()
               .defer(d3.json, "us-counties.json")
-              .defer(d3.tsv, "partisanship.tsv", function(d) { rateById.set(d.id, +d.rate); })
+              .defer(d3.tsv, "partisanship.tsv", function(d) { partisanship.set(d.id, +d.rate); })
               .await(ready);
 
           function ready(error, us) {
@@ -90,14 +90,14 @@
                 .selectAll("path")
                 .data(topojson.feature(us, us.objects.counties).features)
                 .enter().append("path")
-                .attr("fill", function(d) { return color(rateById.get(d.id)); })
+                .attr("fill", function(d) { return color(partisanship.get(d.id)); })
                 .attr("d", path)
                 .on("mouseover", function(){ 
                     d3.select(this).style("fill", "aliceblue"); 
                 })
                 .on("mouseout", function(){ 
                     d3.select(this).style("fill", function(d) { 
-                        return color(rateById.get(d.id)); 
+                        return color(partisanship.get(d.id)); 
                     }); 
                 })     
 

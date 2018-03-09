@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+  <!-- Basic Page Needs
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  <meta charset="utf-8">
+  <title>Radio Days - Coverage</title>
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!-- Mobile Specific Metas
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- CSS
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  <link rel="stylesheet" href="css/normalize.css">
+  <link rel="stylesheet" href="css/skeleton.css">
+  <link rel="stylesheet" href="css/extra.css">
+
+  <!-- Favicon
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  <link rel="icon" type="image/png" href="images/favicon.png">
+  
+
+</head>
+<body>
+<script src="//d3js.org/d3.v3.min.js"></script>
+<script src="//d3js.org/queue.v1.min.js"></script>
+<script src="//d3js.org/topojson.v1.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+
+
+  <!-- Primary Page Layout
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  <div class="container">
+    <div class="row">
+      <div class="one-half column" style="margin-top: 5%">
+        <h1>Radio Days - Coverage</h1>
+      </div>
+    </div>
+    <div class="row">
+      <div class="twelve columns">
+        <button id="modeL">Show Limbaugh</button>
+        <button id="modeNPR">Show NPR</button>
+        <button id="both">Show All</button>
+        <script type="text/javascript">
+
+          // -------------------------------------------- Setup
+          var width  = 900,height = 590;
+          var rateById = d3.map();
+          var color =  d3.scale.linear().domain([2,10])
+              .interpolate(d3.interpolateHcl)
+              .range(["#f2f2d7","#77969A"]);
+          var projection = d3.geo.albersUsa()
+              .scale(1280)
+              .translate([width / 2, height / 2]);
+          var path = d3.geo.path()
+              .projection(projection);
+          var x = d3.scale.linear()
+              .domain([1, 10])
+              .rangeRound([600, 860]);
+
+          var svg = d3.select("body").append("svg")
+              .attr("width", width)
+              .attr("height", height);
+          
+          queue()
+              .defer(d3.json, "us-counties.json")
+              .defer(d3.tsv, "Unemployment.tsv", function(d) { rateById.set(d.id, +d.rate); })
+              .await(ready);
+
+
+          function ready(error, us) {
+            if (error) throw error;
+
+            // -------------------------------------------- Simple
+            svg.append("g")
+                .attr("class", "counties")
+                .selectAll("path")
+                .data(topojson.feature(us, us.objects.counties).features)
+                .enter().append("path")
+                .attr("fill", "#77969A")
+                .attr("d", path)
+                .on("mouseover", function(){ 
+                    d3.select(this).style("fill", "aliceblue"); 
+                })
+                .on("mouseout", function(){ 
+                    d3.select(this).style("fill", "#77969A"); 
+                })     
+
+
+            // -------------------------------------------- Unemployment
+
+            // svg.append("g")
+            //     .attr("class", "counties")
+            //     .selectAll("path")
+            //     .data(topojson.feature(us, us.objects.counties).features)
+            //     .enter().append("path")
+            //     .attr("fill", function(d) { return color(rateById.get(d.id)); })
+            //     .style("opacity", 0.8)
+            //     .attr("d", path)
+            //     .on("mouseover", function(){ 
+            //         d3.select(this).style("fill", "aliceblue"); 
+            //     })
+            //     .on("mouseout", function(){ 
+            //         d3.select(this).style("fill", function(d) { 
+            //             return color(rateById.get(d.id)); 
+            //         }); 
+            //     })     
+
+            svg.append("path")
+                .datum(topojson.mesh(us, us.objects.states, function(a, b) { return a !== b; }))
+                .attr("class", "states")
+                .attr("d", path);
+
+
+            d3.json("dataCoverage.json", function(error, dataCoverage) {
+
+              // -------------------------------------------- market
+              var market = svg.selectAll("g.market")
+                .data(dataCoverage)
+                .enter()
+                .append("g")
+                .attr("class", "market")
+                .attr("transform", function(d) { 
+                  if (d.long!==-1 && d.lat!==-1) {
+                    return "translate(" + projection([d.long, d.lat]) + ")"; }
+                  });
+
+              market.append("circle")
+                .attr("r", function(d) { return d.limbaughAffiliate * 5;})
+                .style("fill", "#D38C80")
+                .attr("class", "limbaughAffiliate")
+                .style("opacity", 0.55)
+                .on("mouseover", function(d){ 
+                    d3.select(this).style("opacity", 0.85); 
+                    document.getElementById("hovering").innerHTML = d.name;
+                })              
+                .on("mouseout", function(d){ 
+                    d3.select(this).style("opacity", 0.55); 
+                })
+
+                market.append("circle")
+                .attr("r", function(d) { return d.fasAffiliate * 5;})
+                .style("fill", "#C9DBED")
+                .attr("class", "fasAffiliate")
+                .style("opacity", 0.55)
+                .on("mouseover", function(d){ 
+                    d3.select(this).style("opacity", 0.85); 
+                    document.getElementById("hovering").innerHTML = d.name;
+                })              
+                .on("mouseout", function(d){ 
+                    d3.select(this).style("opacity", 0.55); 
+                })
+
+              // -------------------------------------------- Text
+
+              // market.append("text")
+              //   .attr("x", 5)
+              //   .text(function(d) { return d.name; })
+              //   .style("fill", "#000")
+              //   .style("font-family", "Inter UI")
+              //   .style("font-size", "10px")
+              //   .style("font-weight", "600");
+              
+              // -------------------------------------------- Legend
+
+              // var ls_w = 20, ls_h = 20;
+              // var legend = svg.selectAll("g.legend")
+              // .data(dataCoverage)
+              // .enter()
+              // .append("g")
+              // .attr("class", "legend");
+
+              // legend.append("rect")
+              // .attr("x", 20)
+              // .attr("y", function(d, i){ return height - (i*ls_h) - 2*ls_h;})
+              // .attr("width", ls_w)
+              // .attr("height", ls_h)
+              // .style("fill", function(d, i) { return color(d); })
+              // .style("opacity", 0.8);
+
+              // legend.append("text")
+              // .attr("x", 50)s
+              // .attr("y", function(d, i){ return height - (i*ls_h) - ls_h - 4;})
+              // .text(function(d){ return d.band; });
+
+              // -------------------------------------------- Button
+
+              d3.select("#modeL").on("click", function(d) { 
+                d3.selectAll(".limbaughAffiliate").transition().delay(400).style("opacity", 0.55)
+                d3.selectAll(".fasAffiliate").transition().delay(400).style("opacity", 0)
+              })              
+              d3.select("#modeNPR").on("click", function(d) { 
+                d3.selectAll(".fasAffiliate").transition().delay(400).style("opacity", 0.55)
+                d3.selectAll(".limbaughAffiliate").transition().delay(400).style("opacity", 0)
+              })
+              d3.select("#both").on("click", function(d) { 
+                d3.selectAll(".fasAffiliate").transition().delay(400).style("opacity", 0.55)
+                d3.selectAll(".limbaughAffiliate").transition().delay(400).style("opacity", 0.55)
+              })
+
+            });   
+
+
+          }
+
+        </script>
+      </div>
+    </div>
+  </div>
+
+<!-- End Document
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+</body>
+</html>

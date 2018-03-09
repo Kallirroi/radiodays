@@ -1,0 +1,28 @@
+@import url('https://rsms.me/inter/inter-ui.css');
+
+.container, .text {
+	font-family: 'Inter UI', sans-serif;
+}
+
+.counties {
+  fill: none;
+}
+
+.states {
+  fill: none;
+  stroke: #fff;
+  stroke-linejoin: round;
+}
+
+svg {
+	padding: 0 20vw;
+	margin: 0;
+}
+
+g.station {
+	cursor: pointer;
+}
+
+#playing, #hovering {
+	text-align: right;
+}
