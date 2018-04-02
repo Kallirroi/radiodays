@@ -5,7 +5,7 @@
   <!-- Basic Page Needs
   –––––––––––––––––––––––––––––––––––––––––––––––––– -->
   <meta charset="utf-8">
-  <title>Radio Days - Market</title>
+  <title>Radio Days</title>
   <meta name="description" content="">
   <meta name="author" content="">
 
@@ -37,37 +37,78 @@
   <div class="container">
     <div class="row">
       <div class="one-half column" style="margin-top: 5%">
-        <h1>Radio Days - Market</h1>
+        <h1>Radio Days</h1>
       </div>
     </div>
     <div class="row">
-      <div class="twelve columns">
-        <div id="playing">Click on a bubble to listen to the radio market's livestream.</div>
-        <div id="hovering">Hover over market to reveal name. </div>
+      <div class="one-half column" style="margin-top: 5%">
+        <h5>What is America listening to?</h5>
+      </div>
+    </div>   
+    <div class="row">
+      <div class="one-half column" >
+        <p>Dolorem temporibus rem esse assumenda voluptas omnis. Incidunt molestias tenetur fugiat temporibus id deserunt. Necessitatibus dolores ut labore placeat quaerat expedita soluta fugit. Earum aut eaque soluta. Asperiores libero saepe porro et et quasi. Reprehenderit aut voluptatem recusandae nemo atque. Corrupti hic aut autem dolorem.</p>
+      </div>
+    </div>       
+    <div class="row">
+      <div class="twelve columns" style="margin-top: 5%; margin-bottom: 0">
+        <div id="hovering"></div>
+        <div id="controls" >
+          <div class="modeL">Limbaugh</div>
+          <div class="modeFAS">FAS</div>
+        </div>
+      </div>
+    </div>
         <script type="text/javascript">
 
           // -------------------------------------------- Setup
-          var width  = 900,height = 590;
+          var width  = 1200,height = 590;
           var rateById = d3.map();
-          var color =  d3.scale.linear().domain([2,10])
+          var color =  d3.scale.linear().domain([1,7])
               .interpolate(d3.interpolateHcl)
-              .range(["#f2f2d7","#77969A"]);
+              .range([ "#f2f2d7", "#77969A"]);
           var projection = d3.geo.albersUsa()
-              .scale(1280)
+              .scale(1200)
               .translate([width / 2, height / 2]);
+          var unemployment = d3.map();
           var path = d3.geo.path()
               .projection(projection);
           var x = d3.scale.linear()
-              .domain([1, 10])
-              .rangeRound([600, 860]);
-
+              .domain([1, 10]);
           var svg = d3.select("body").append("svg")
               .attr("width", width)
               .attr("height", height);
-          
+
+          // // -------------------------------------------- Legend
+          // var legend = svg.append("g")
+          //         .attr("class", "key")
+          //         .attr("transform", "translate(0,40)");         
+                        
+          // legend.selectAll("rect")
+          //   .data(color.range().map(function(d) {
+          //     if (d[0] == null) d[0] = x.domain()[0];
+          //     if (d[1] == null) d[1] = x.domain()[1];
+          //     return d;
+          //   }).reverse())
+          //   .enter().append("rect")
+          //     .attr("height", 8)
+          //     .attr("x", function(d,i) {return width/2 + i * 20})
+          //     .attr("y", -20)
+          //     .attr("width", 20)
+          //     .style("fill", function(d){return d;}); 
+
+          // legend.append("text")
+          //     .attr("class", "caption")
+          //     .attr("x", width/2)
+          //     .attr("y", -26)
+          //     .attr("fill", "#000")
+          //     .attr("text-anchor", "start")
+          //     .attr("font-weight", "bold")
+          //     .text("Unemployment rate");   
+
           queue()
               .defer(d3.json, "us-counties.json")
-              .defer(d3.tsv, "Unemployment.tsv", function(d) { rateById.set(d.id, +d.rate); })
+              .defer(d3.tsv, "Unemployment.tsv",  function(d) { unemployment.set(d.id, +d.rate); })
               .await(ready);
 
 
@@ -75,45 +116,45 @@
             if (error) throw error;
 
             // -------------------------------------------- Simple
-            svg.append("g")
-                .attr("class", "counties")
-                .selectAll("path")
-                .data(topojson.feature(us, us.objects.counties).features)
-                .enter().append("path")
-                .attr("fill", "#77969A")
-                .attr("d", path)
-                .on("mouseover", function(){ 
-                    d3.select(this).style("fill", "aliceblue"); 
-                })
-                .on("mouseout", function(){ 
-                    d3.select(this).style("fill", "#77969A"); 
-                })     
-
-
-            // -------------------------------------------- Unemployment
-
             // svg.append("g")
             //     .attr("class", "counties")
             //     .selectAll("path")
             //     .data(topojson.feature(us, us.objects.counties).features)
             //     .enter().append("path")
-            //     .attr("fill", function(d) { return color(rateById.get(d.id)); })
-            //     .style("opacity", 0.8)
+            //     .attr("fill", "#77969A")
+            //     .style("opacity", 0.6)
             //     .attr("d", path)
             //     .on("mouseover", function(){ 
             //         d3.select(this).style("fill", "aliceblue"); 
             //     })
             //     .on("mouseout", function(){ 
-            //         d3.select(this).style("fill", function(d) { 
-            //             return color(rateById.get(d.id)); 
-            //         }); 
+            //         d3.select(this).style("fill", "#77969A"); 
             //     })     
+
+
+            // -------------------------------------------- Unemployment
+
+            svg.append("g")
+                .attr("class", "counties")
+                .selectAll("path")
+                .data(topojson.feature(us, us.objects.counties).features)
+                .enter().append("path")
+                .attr("fill", function(d) { return color(d.rate = unemployment.get(d.id)); })
+                .style("opacity", 0.8)
+                .attr("d", path)
+                .on("mouseover", function(){ 
+                    d3.select(this).style("fill", "#6d6b6b"); 
+                })
+                .on("mouseout", function(){ 
+                    d3.select(this).style("fill", function(d) { 
+                        return color(d.rate = unemployment.get(d.id));
+                    }); 
+                })
 
             svg.append("path")
                 .datum(topojson.mesh(us, us.objects.states, function(a, b) { return a !== b; }))
                 .attr("class", "states")
-                .attr("d", path);
-
+                .attr("d", path);  
 
             d3.json("dataMarket.json", function(error, dataMarket) {
 
@@ -128,81 +169,78 @@
                     return "translate(" + projection([d.long, d.lat]) + ")"; }
                   });
 
-
+              //Limbaugh   
               market.append("circle")
                 .attr("r", function(d) { return d.limbaughPercent;})
-                .style("fill", "#000")
-                .style("opacity", 0.35)
+                .attr("class", "limbaugh")
+                .style("opacity", 0)
+                .style("stroke", "#000")
+                .style("fill", "rgba(255, 255, 255, 0.7)")
                 .on("mouseover", function(d){ 
-                    d3.select(this).style("opacity", 0.85); 
+                    d3.select(this).style("fill", "rgba(255, 255, 255, 1)"); 
                     document.getElementById("hovering").innerHTML = d.name;
                 })              
                 .on("mouseout", function(d){ 
-                    d3.select(this).style("opacity", 0.35); 
-                    document.getElementById("hovering").innerHTML = "Hover over market to reveal name.";
+                    d3.select(this).style("fill", "rgba(255, 255, 255, 0.7)"); 
+                    document.getElementById("hovering").innerHTML = " ";
                 })
-                .on("click", function(d) { 
-                  var audioElement = document.createElement('audio');
-                  audioElement.setAttribute('src', d.live);
-                  audioElement.play();
-                  setTimeout(function() { audioElement.pause()}, 5000);
-                  document.getElementById("playing").innerHTML = "Listening to: " + d.name;
-                })              
 
-
-
-                market.append("circle")
+              //FAS
+              market.append("circle")
                 .attr("r", function(d) { return d.fasPercent;})
-                .style("fill", "#77969A")
-                .style("opacity", 0.35)
+                .attr("class", "fas")
+                .style("opacity", 0)
+                .style("stroke", "#000")
+                .style("fill", "rgba(173, 140, 171, 0.8)")
                 .on("mouseover", function(d){ 
-                    d3.select(this).style("opacity", 0.85); 
+                    d3.select(this).style("fill", "rgba(173, 140, 171, 1)"); 
                     document.getElementById("hovering").innerHTML = d.name;
                 })              
                 .on("mouseout", function(d){ 
-                    d3.select(this).style("opacity", 0.35); 
-                    document.getElementById("hovering").innerHTML = "Hover over market to reveal name.";
-                })
-                .on("click", function(d) { 
-                  var audioElement = document.createElement('audio');
-                  audioElement.setAttribute('src', d.live);
-                  audioElement.play();
-                  setTimeout(function() { audioElement.pause()}, 5000);
-                  document.getElementById("playing").innerHTML = "Listening to: " + d.name;
+                    d3.select(this).style("fill", "rgba(173, 140, 171, 0.8)"); 
+                    document.getElementById("hovering").innerHTML = " ";
                 })
 
-              // -------------------------------------------- Text
 
-              // market.append("text")
-              //   .attr("x", 5)
-              //   .text(function(d) { return d.name; })
-              //   .style("fill", "#000")
-              //   .style("font-family", "Inter UI")
-              //   .style("font-size", "10px")
-              //   .style("font-weight", "600");
-              
-              // -------------------------------------------- Legend
+                d3.selectAll('.limbaugh')
+                    .filter(function(d) { return d.number < 50 })
+                      .attr("class", "first");
 
-              // var ls_w = 20, ls_h = 20;
-              // var legend = svg.selectAll("g.legend")
-              // .data(radio)
-              // .enter()
-              // .append("g")
-              // .attr("class", "legend");
+                d3.selectAll('.limbaugh')
+                    .filter(function(d) { return d.number > 50 && d.number < 100 })
+                      .attr("class", "second");
 
-              // legend.append("rect")
-              // .attr("x", 20)
-              // .attr("y", function(d, i){ return height - (i*ls_h) - 2*ls_h;})
-              // .attr("width", ls_w)
-              // .attr("height", ls_h)
-              // .style("fill", function(d, i) { return color(d); })
-              // .style("opacity", 0.8);
+                d3.selectAll('.limbaugh')
+                    .filter(function(d) { return d.number > 100 && d.number < 200 })
+                      .attr("class", "third");
 
-              // legend.append("text")
-              // .attr("x", 50)
-              // .attr("y", function(d, i){ return height - (i*ls_h) - ls_h - 4;})
-              // .text(function(d){ return d.band; });
 
+
+                // show FAS
+                d3.select(".modeL").on("click", function(d) { 
+                  // d3.selectAll(".limbaugh").transition().delay(100).style("opacity", 1);
+                  d3.selectAll(".fas").transition().delay(100).style("opacity", 0);
+
+                  d3.selectAll(".first")
+                      .transition()
+                      .delay(1000)
+                      .style("opacity", 1)
+
+                   d3.selectAll(".second")   
+                      .transition() 
+                      .delay(2000)
+                      .style("opacity", 1)
+
+                   d3.selectAll(".third")   
+                      .transition() 
+                      .delay(3000)
+                      .style("opacity", 1)
+                })              
+                // show L
+                d3.select(".modeFAS").on("click", function(d) { 
+                  d3.selectAll(".fas").transition().delay(100).style("opacity", 1);
+                  d3.selectAll(".limbaugh").transition().delay(100).style("opacity", 0);
+                })
 
             });   
 
@@ -210,8 +248,6 @@
           }
 
         </script>
-      </div>
-    </div>
   </div>
 
 <!-- End Document

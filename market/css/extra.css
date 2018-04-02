@@ -1,11 +1,18 @@
 @import url('https://rsms.me/inter/inter-ui.css');
 
+.container {
+	padding: 5vh 0;
+}
+
 .container, .text {
 	font-family: 'Inter UI', sans-serif;
+	font-size: 1.8rem;
 }
 
 .counties {
   fill: none;
+  stroke: #fff;
+  stroke-width: 0.2px;
 }
 
 .states {
@@ -15,14 +22,40 @@
 }
 
 svg {
-	padding: 0 20vw;
-	margin: 0;
+	margin: 0 auto;
+	display: block;
+	position: relative;
+	/*border: 1px solid;*/
+	padding-bottom: 20vh;
 }
 
 g.station {
 	cursor: pointer;
+	stroke: #000;
 }
 
-#playing, #hovering {
-	text-align: right;
+
+#controls {
+	width: 10vw;
+	margin: 0 auto;
+	font-family: 'Inter UI', sans-serif;
+	font-size: 1.4rem;
+}
+
+#hovering {
+	font-size: 1.4rem;
+	z-index: 1;
+	float: right;
+}
+
+.modeL, .modeFAS{
+	cursor: pointer;
+	text-align: center;
+	margin-right: 0.6vw;
+	position: relative;
+	display: inline-block;
+}
+
+.modeL:hover, .modeFAS:hover {
+	text-decoration: underline;
 }

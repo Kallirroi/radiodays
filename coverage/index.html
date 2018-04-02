@@ -115,21 +115,21 @@
                 .attr("class", "states")
                 .attr("d", path);
 
-
+            d3.timeOut
             d3.json("dataCoverage.json", function(error, dataCoverage) {
 
-              // -------------------------------------------- market
-              var market = svg.selectAll("g.market")
+              // -------------------------------------------- coverage
+              var coverage = svg.selectAll("g.coverage")
                 .data(dataCoverage)
                 .enter()
                 .append("g")
-                .attr("class", "market")
+                .attr("class", "coverage")
                 .attr("transform", function(d) { 
                   if (d.long!==-1 && d.lat!==-1) {
                     return "translate(" + projection([d.long, d.lat]) + ")"; }
                   });
 
-              market.append("circle")
+              coverage.append("circle")
                 .attr("r", function(d) { return d.limbaughAffiliate * 5;})
                 .style("fill", "#D66B53")
                 .attr("class", "limbaughAffiliate")
@@ -142,7 +142,7 @@
                     d3.select(this).style("opacity", 0.35); 
                 })
 
-                market.append("circle")
+                coverage.append("circle")
                 .attr("r", function(d) { return d.fasAffiliate * 5;})
                 .style("fill", "#6C7C9E")
                 .attr("class", "fasAffiliate")
@@ -157,7 +157,7 @@
 
               // -------------------------------------------- Text
 
-              // market.append("text")
+              // coverage.append("text")
               //   .attr("x", 5)
               //   .text(function(d) { return d.name; })
               //   .style("fill", "#000")

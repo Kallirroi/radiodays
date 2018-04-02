@@ -4,6 +4,10 @@
 	font-family: 'Inter UI', sans-serif;
 }
 
+.container > .header {
+	margin: 4vh 0;
+}
+
 .counties {
   fill: none;
 }
@@ -24,5 +28,5 @@ g.station {
 }
 
 #playing, #hovering {
-	text-align: right;
+	text-align: center;
 }

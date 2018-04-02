@@ -27,7 +27,6 @@ g.station {
 	text-align: center;
 }
 
-button {
-
+#modeL, #modeNPR, #both {
 	font-family: 'Inter UI', sans-serif;
 }
