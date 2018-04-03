@@ -26,10 +26,13 @@
 
 </head>
 <body>
-<script src="//d3js.org/d3.v3.min.js"></script>
-<script src="//d3js.org/queue.v1.min.js"></script>
-<script src="//d3js.org/topojson.v1.min.js"></script>
+<script src="https://d3js.org/d3.v4.min.js"></script>
+<script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
+<script src="https://d3js.org/topojson.v2.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script src="https://d3js.org/d3-array.v1.min.js"></script>
+<script src="https://d3js.org/d3-geo.v1.min.js"></script>
+<script src="https://d3js.org/d3-geo-projection.v2.min.js"></script>
 
 
   <!-- Primary Page Layout
@@ -62,19 +65,20 @@
         <script type="text/javascript">
 
           // -------------------------------------------- Setup
-          var width  = 1200,height = 590;
+          var width  = 1000,height = 590;
           var rateById = d3.map();
-          var color =  d3.scale.linear().domain([1,7])
-              .interpolate(d3.interpolateHcl)
-              .range([ "#f2f2d7", "#77969A"]);
-          var projection = d3.geo.albersUsa()
-              .scale(1200)
-              .translate([width / 2, height / 2]);
+          var color = d3.scaleThreshold()
+              .domain(d3.range(2, 10))
+              .range(d3.schemePuBuGn[9]);
           var unemployment = d3.map();
-          var path = d3.geo.path()
-              .projection(projection);
-          var x = d3.scale.linear()
-              .domain([1, 10]);
+          var path = d3.geoPath();
+          var projection = d3.geoAlbers()
+                        .scale(1280)
+                        .translate([width / 2, height / 2]);
+          var x = d3.scaleLinear()
+            .domain([1, 10])
+            .rangeRound([600, 860]);
+
           var svg = d3.select("body").append("svg")
               .attr("width", width)
               .attr("height", height);
@@ -106,55 +110,38 @@
           //     .attr("font-weight", "bold")
           //     .text("Unemployment rate");   
 
-          queue()
-              .defer(d3.json, "us-counties.json")
-              .defer(d3.tsv, "Unemployment.tsv",  function(d) { unemployment.set(d.id, +d.rate); })
+          d3.queue()
+              .defer(d3.json, "https://d3js.org/us-10m.v1.json")
+              .defer(d3.tsv, "unemployment.tsv",  function(d) { unemployment.set(d.id, +d.rate); })
               .await(ready);
 
 
           function ready(error, us) {
             if (error) throw error;
 
-            // -------------------------------------------- Simple
-            // svg.append("g")
-            //     .attr("class", "counties")
-            //     .selectAll("path")
-            //     .data(topojson.feature(us, us.objects.counties).features)
-            //     .enter().append("path")
-            //     .attr("fill", "#77969A")
-            //     .style("opacity", 0.6)
-            //     .attr("d", path)
-            //     .on("mouseover", function(){ 
-            //         d3.select(this).style("fill", "aliceblue"); 
-            //     })
-            //     .on("mouseout", function(){ 
-            //         d3.select(this).style("fill", "#77969A"); 
-            //     })     
-
-
             // -------------------------------------------- Unemployment
 
             svg.append("g")
                 .attr("class", "counties")
-                .selectAll("path")
-                .data(topojson.feature(us, us.objects.counties).features)
-                .enter().append("path")
+              .selectAll("path")
+              .data(topojson.feature(us, us.objects.counties).features)
+              .enter().append("path")
                 .attr("fill", function(d) { return color(d.rate = unemployment.get(d.id)); })
                 .style("opacity", 0.8)
                 .attr("d", path)
                 .on("mouseover", function(){ 
-                    d3.select(this).style("fill", "#6d6b6b"); 
+                    d3.select(this).style("fill", "rgba(0,0,0,0.8)"); 
                 })
                 .on("mouseout", function(){ 
-                    d3.select(this).style("fill", function(d) { 
-                        return color(d.rate = unemployment.get(d.id));
-                    }); 
-                })
+                    d3.select(this).style("fill", function(d) { return color(d.rate = unemployment.get(d.id)); })
+                })  
+              .append("title")
+                .text(function(d) { return d.rate + "%"; });
 
             svg.append("path")
                 .datum(topojson.mesh(us, us.objects.states, function(a, b) { return a !== b; }))
                 .attr("class", "states")
-                .attr("d", path);  
+                .attr("d", path);
 
             d3.json("dataMarket.json", function(error, dataMarket) {
 
@@ -218,8 +205,7 @@
 
                 // show FAS
                 d3.select(".modeL").on("click", function(d) { 
-                  // d3.selectAll(".limbaugh").transition().delay(100).style("opacity", 1);
-                  d3.selectAll(".fas").transition().delay(100).style("opacity", 0);
+                  d3.selectAll(".fas").transition().style("opacity", 0);
 
                   d3.selectAll(".first")
                       .transition()
@@ -228,18 +214,21 @@
 
                    d3.selectAll(".second")   
                       .transition() 
-                      .delay(2000)
+                      .delay(1400)
                       .style("opacity", 1)
 
                    d3.selectAll(".third")   
                       .transition() 
-                      .delay(3000)
+                      .delay(1800)
                       .style("opacity", 1)
                 })              
                 // show L
                 d3.select(".modeFAS").on("click", function(d) { 
                   d3.selectAll(".fas").transition().delay(100).style("opacity", 1);
-                  d3.selectAll(".limbaugh").transition().delay(100).style("opacity", 0);
+
+                  d3.selectAll(".first").transition().style("opacity", 0);
+                  d3.selectAll(".second").transition().style("opacity", 0);
+                  d3.selectAll(".third").transition().style("opacity", 0);
                 })
 
             });   
