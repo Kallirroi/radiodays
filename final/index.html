@@ -28,7 +28,7 @@
 <body>
 <script src="https://d3js.org/d3.v4.min.js"></script>
 <script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
-<script src="https://d3js.org/topojson.v2.min.js"></script>
+<script src="https://d3js.org/topojson.v1.min.js"></script>
 <script src="https://d3js.org/d3-array.v1.min.js"></script>
 <script src="https://d3js.org/d3-geo.v1.min.js"></script>
 <script src="https://d3js.org/d3-geo-projection.v2.min.js"></script>
@@ -66,17 +66,15 @@
         <script type="text/javascript">
 
           // -------------------------------------------- Setup
-          var width  = 960,height = 600;
+          var width  = 960,height = 500;
           var rateById = d3.map();
           var color = d3.scaleThreshold()
               .domain(d3.range(2, 10))
               .range(d3.schemePuBuGn[9]);
           var unemployment = d3.map();
-          var path = d3.geoPath();
           var x = d3.scaleLinear()
             .domain([1, 10])
-            .rangeRound([600, 860]);
-          var projection = d3.geoAlbersUsa();
+            .rangeRound([600, 780]);
 
           var svg = d3.select("body").append("svg")
               .attr("width", width)
@@ -85,7 +83,7 @@
           // // -------------------------------------------- Legend
           var legend = svg.append("g")
             .attr("class", "key")
-            .attr("transform", "translate(0,40)");
+            .attr("transform", "translate(40,15)");
 
           legend.selectAll("rect")
           .data(color.range().map(function(d) {
@@ -118,8 +116,7 @@
 
 
           d3.queue()
-              .defer(d3.json, "us-counties.json")
-              .defer(d3.json, "https://d3js.org/us-10m.v1.json")
+              .defer(d3.json, "https://gist.githubusercontent.com/mbostock/4090846/raw/d534aba169207548a8a3d670c9c2cc719ff05c47/us.json")
               .defer(d3.tsv, "unemployment.tsv",  function(d) { unemployment.set(d.id, +d.rate); })
               .await(ready);
 
@@ -127,6 +124,9 @@
             function ready(error, us) {
 
               if (error) throw error;
+
+              var projection = d3.geoAlbersUsa().fitSize([width, height],topojson.feature(us, us.objects.counties));
+              var path = d3.geoPath(projection);
 
               function loadMap() {
                 // -------------------------------------------- Unemployment
@@ -148,20 +148,65 @@
                     .text(function(d) { return d.rate + "%"; });
 
                 svg.append("path")
-                    .datum(topojson.mesh(us, us.objects.states, function(a, b) { return a !== b; }))
+                    .datum(topojson.mesh(us, us.objects.states, function(a, b) { return a.id !== b.id; }))
                     .attr("class", "states")
                     .attr("d", path);
               }
               loadMap();
-              
 
-              function loadProjection() {
-               d3.json("us-counties.json", function(error, usprojection) { 
-                projection = d3.geoAlbersUsa().scale(1).fitSize([width, height],topojson.feature(usprojection, usprojection.objects.states));
-                });
-                return projection;              
-              }
-              loadProjection();
+              d3.json("dataRadio.json", function(error, dataRadio) {
+                function drawStations() {
+                  // -------------------------------------------- Station
+                  var station = svg.selectAll("g.station")
+                    .data(dataRadio)
+                    .enter()
+                    .append("g")
+                    .attr("class", "station")
+                    .attr("transform", function(d) { 
+                      if (d.long!==-1 && d.lat!==-1) {
+                        return "translate(" + projection([d.long, d.lat]) + ")"; }
+                    });
+
+
+                  station.append("circle")
+                    .attr("r", 6)
+                    .style("fill", "#000")
+                    .style("opacity", 0.7)
+                    .style("stroke", "#000")
+                    .on("mouseover", function(d){ 
+                        d3.select(this).style("opacity", 1); 
+                        d3.select("#hovering").text(d.name);
+                        d3.select(this).style("stroke-width", 2);
+                    })              
+                    .on("mouseout", function(d){ 
+                        d3.select(this).style("opacity", 0.45); 
+                        d3.select("#hovering").text("");
+                        d3.select(this).style("stroke-width", 1);
+                    })
+                    .on("click", function(d) { 
+                      var audioElement = document.createElement('audio');
+                      audioElement.setAttribute('src', d.live);
+                      audioElement.play();
+                      setTimeout(function() { audioElement.pause()}, 5000);
+                      d3.select("#playing").text("Listening to: " + d.name);
+                    });
+
+                    d3.select(".modeLive").on("click", function(d) { 
+                      d3.selectAll(".station").transition().delay(100).style("opacity", 1);
+
+                      d3.selectAll(".Lfirst").transition().style("opacity", 0);
+                      d3.selectAll(".Lsecond").transition().style("opacity", 0);
+                      d3.selectAll(".Lthird").transition().style("opacity", 0);                      
+
+                      d3.selectAll(".Ffirst").transition().style("opacity", 0);
+                      d3.selectAll(".Fsecond").transition().style("opacity", 0);
+                      d3.selectAll(".Fthird").transition().style("opacity", 0);
+
+                    }) 
+
+                }
+                drawStations();
+              });                   
 
               d3.json("dataMarket.json", function(error, dataMarket) {
                 function drawMarkets() {
@@ -284,60 +329,7 @@
                     })                  
                 }
                 drawMarkets();
-              });   
-
-              d3.json("dataRadio.json", function(error, dataRadio) {
-                function drawStations() {
-                  // -------------------------------------------- Station
-                  var station = svg.selectAll("g.station")
-                    .data(dataRadio)
-                    .enter()
-                    .append("g")
-                    .attr("class", "station")
-                    .attr("transform", function(d) { 
-                      if (d.long!==-1 && d.lat!==-1) {
-                        return "translate(" + projection([d.long, d.lat]) + ")"; }
-                    });
-
-
-                  station.append("circle")
-                    .attr("r", 6)
-                    .style("fill", "red")
-                    .style("opacity", 0.45)
-                    .on("mouseover", function(d){ 
-                        d3.select(this).style("opacity", 1); 
-                        d3.select("#hovering").text(d.name);
-                        d3.select(this).style("stroke-width", 2);
-                    })              
-                    .on("mouseout", function(d){ 
-                        d3.select(this).style("opacity", 0.45); 
-                        d3.select("#hovering").text("");
-                        d3.select(this).style("stroke-width", 1);
-                    })
-                    .on("click", function(d) { 
-                      var audioElement = document.createElement('audio');
-                      audioElement.setAttribute('src', d.live);
-                      audioElement.play();
-                      setTimeout(function() { audioElement.pause()}, 5000);
-                      d3.select("#playing").text("Listening to: " + d.name);
-                    });
-
-                    d3.select(".modeLive").on("click", function(d) { 
-                      d3.selectAll(".station").transition().delay(100).style("opacity", 1);
-
-                      d3.selectAll(".Lfirst").transition().style("opacity", 0);
-                      d3.selectAll(".Lsecond").transition().style("opacity", 0);
-                      d3.selectAll(".Lthird").transition().style("opacity", 0);                      
-
-                      d3.selectAll(".Ffirst").transition().style("opacity", 0);
-                      d3.selectAll(".Fsecond").transition().style("opacity", 0);
-                      d3.selectAll(".Fthird").transition().style("opacity", 0);
-
-                    }) 
-
-                }
-                drawStations();
-              });                 
+              });               
 
 
             }
