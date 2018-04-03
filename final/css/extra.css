@@ -36,16 +36,19 @@ g.station {
 
 
 #controls {
-	width: 15vw;
+	width: auto;
 	margin: 0 auto;
 	font-family: 'Inter UI', sans-serif;
 	font-size: 1.4rem;
+	/*border: 1px solid;*/
+	text-align: center;
 }
 
-#hovering {
+#hovering, #playing {
 	font-size: 1.4rem;
 	z-index: 1;
 	float: right;
+	height: 1vh;
 }
 
 .modeLive, .modeL, .modeFAS{
