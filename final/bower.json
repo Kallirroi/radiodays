@@ -1,0 +1,12 @@
+{
+  "name": "staticTemplate",
+  "version": "2.0.4",
+  "main": "css/skeleton.css",
+  "keywords": [
+    "css",
+    "skeleton",
+    "responsive",
+    "boilerplate"
+  ],
+  "license": "MIT"
+}

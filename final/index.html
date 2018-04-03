@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+  <!-- Basic Page Needs
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  <meta charset="utf-8">
+  <title>Radio Days</title>
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!-- Mobile Specific Metas
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- CSS
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  <link rel="stylesheet" href="css/normalize.css">
+  <link rel="stylesheet" href="css/skeleton.css">
+  <link rel="stylesheet" href="css/extra.css">
+
+  <!-- Favicon
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  <link rel="icon" type="image/png" href="images/favicon.png">
+  
+
+</head>
+<body>
+<script src="https://d3js.org/d3.v4.min.js"></script>
+<script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
+<script src="https://d3js.org/topojson.v2.min.js"></script>
+<script src="https://d3js.org/d3-array.v1.min.js"></script>
+<script src="https://d3js.org/d3-geo.v1.min.js"></script>
+<script src="https://d3js.org/d3-geo-projection.v2.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+
+  <!-- Primary Page Layout
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  <div class="container">
+    <div class="row">
+      <div class="one-half column" style="margin-top: 5%">
+        <h1>Radio Days</h1>
+      </div>
+    </div>
+<!--     <div class="row">
+      <div class="one-half column">
+        <h5>What is America listening to?</h5>
+      </div>
+    </div>  -->  
+    <div class="row">
+      <div class="one-half column" style="margin-top: 5%">
+        <p>Recent analysis has shown that there is more polarization in Internet-poor and older communities than there is among those who get their news online. One potential reason for this is talk radio. It is available everywhere in America and is listened to by most of the local population. </p> <p>In the map below, we are comparing the coverage between Rush Limbaugh and FAS radio shows. The choropleth shows unemployment rates as of August, 2016, taken from the <a href="https://www.bls.gov/lau/#tables">Bureau of Labor Statistics.</a></p>
+      </div>
+    </div>       
+    <div class="row">
+      <div class="twelve columns" style="margin-top: 5%; margin-bottom: 0">
+        <div id="hovering"></div>
+        <div id="playing"></div>
+        <div id="controls" >
+          <a href="#livefeed" class="modeLive">Live feed</a>
+          <a href="#limbaugh" class="modeL">Limbaugh</a>
+          <a href="#fas" class="modeFAS">FAS</a>
+        </div>
+      </div>
+    </div>
+        <script type="text/javascript">
+
+          // -------------------------------------------- Setup
+          var width  = 960,height = 600;
+          var rateById = d3.map();
+          var color = d3.scaleThreshold()
+              .domain(d3.range(2, 10))
+              .range(d3.schemePuBuGn[9]);
+          var unemployment = d3.map();
+          var path = d3.geoPath();
+          var x = d3.scaleLinear()
+            .domain([1, 10])
+            .rangeRound([600, 860]);
+          var projection = d3.geoAlbersUsa();
+
+          var svg = d3.select("body").append("svg")
+              .attr("width", width)
+              .attr("height", height);
+
+          // // -------------------------------------------- Legend
+          var legend = svg.append("g")
+            .attr("class", "key")
+            .attr("transform", "translate(0,40)");
+
+          legend.selectAll("rect")
+          .data(color.range().map(function(d) {
+              d = color.invertExtent(d);
+              if (d[0] == null) d[0] = x.domain()[0];
+              if (d[1] == null) d[1] = x.domain()[1];
+              return d;
+            }))
+          .enter().append("rect")
+            .attr("height", 8)
+            .attr("x", function(d) { return x(d[0]); })
+            .attr("width", function(d) { return x(d[1]) - x(d[0]); })
+            .attr("fill", function(d) { return color(d[0]); });
+
+          legend.append("text")
+            .attr("class", "caption")
+            .attr("x", x.range()[0])
+            .attr("y", -6)
+            .attr("fill", "#000")
+            .attr("text-anchor", "start")
+            .attr("font-weight", "bold")
+            .text("Unemployment rate");
+
+          legend.call(d3.axisBottom(x)
+            .tickSize(13)
+            .tickFormat(function(x, i) { return i ? x : x + "%"; })
+            .tickValues(color.domain()))
+          .select(".domain")
+            .remove();
+
+
+          d3.queue()
+              .defer(d3.json, "us-counties.json")
+              .defer(d3.json, "https://d3js.org/us-10m.v1.json")
+              .defer(d3.tsv, "unemployment.tsv",  function(d) { unemployment.set(d.id, +d.rate); })
+              .await(ready);
+
+
+            function ready(error, us) {
+
+              if (error) throw error;
+
+              function loadMap() {
+                // -------------------------------------------- Unemployment
+                svg.append("g")
+                    .attr("class", "counties")
+                  .selectAll("path")
+                  .data(topojson.feature(us, us.objects.counties).features)
+                  .enter().append("path")
+                    .attr("fill", function(d) { return color(d.rate = unemployment.get(d.id)); })
+                    .style("opacity", 0.8)
+                    .attr("d", path)
+                    .on("mouseover", function(){ 
+                        d3.select(this).style("fill", "rgba(0,0,0,0.8)"); 
+                    })
+                    .on("mouseout", function(){ 
+                        d3.select(this).style("fill", function(d) { return color(d.rate = unemployment.get(d.id)); })
+                    })  
+                  .append("title")
+                    .text(function(d) { return d.rate + "%"; });
+
+                svg.append("path")
+                    .datum(topojson.mesh(us, us.objects.states, function(a, b) { return a !== b; }))
+                    .attr("class", "states")
+                    .attr("d", path);
+              }
+              loadMap();
+              
+
+              function loadProjection() {
+               d3.json("us-counties.json", function(error, usprojection) { 
+                projection = d3.geoAlbersUsa().scale(1).fitSize([width, height],topojson.feature(usprojection, usprojection.objects.states));
+                });
+                return projection;              
+              }
+              loadProjection();
+
+              d3.json("dataMarket.json", function(error, dataMarket) {
+                function drawMarkets() {
+                  // -------------------------------------------- market
+                  var market = svg.selectAll("g.market")
+                    .data(dataMarket)
+                    .enter()
+                    .append("g")
+                    .attr("class", "market")
+                    .attr("transform", function(d) { 
+                      if (d.long!==-1 && d.lat!==-1) {
+                        return "translate(" + projection([d.long, d.lat]) + ")"; }
+                    });
+
+                  //Limbaugh   
+                  market.append("circle")
+                    .attr("r", 6)
+                    .attr("class", "limbaugh")
+                    .style("opacity", 0)
+                    .style("stroke", "#000")
+                    .style("fill", "rgba(255, 255, 255, 0.7)")
+                    .on("mouseover", function(d){ 
+                        d3.select(this).style("fill", "rgba(255, 255, 255, 1)"); 
+                        d3.select("#hovering").text(d.name);
+                    })              
+                    .on("mouseout", function(d){ 
+                        d3.select(this).style("fill", "rgba(255, 255, 255, 0.7)"); 
+                        d3.select("#hovering").text(" ");
+                    })
+
+                  //FAS
+                  market.append("circle")
+                    .attr("r", 6)
+                    .attr("class", "fas")
+                    .style("opacity", 0)
+                    .style("stroke", "#000")
+                    .style("fill", "rgba(173, 140, 171, 0.8)")
+                    .on("mouseover", function(d){ 
+                        d3.select(this).style("fill", "rgba(173, 140, 171, 1)"); 
+                        d3.select("#hovering").text(d.name);
+                    })              
+                    .on("mouseout", function(d){ 
+                        d3.select(this).style("fill", "rgba(173, 140, 171, 0.8)"); 
+                        d3.select("#hovering").text(" ");
+                    })
+
+
+                    d3.selectAll('.limbaugh')
+                        .filter(function(d) { return d.number < 50 })
+                          .attr("class", "Lfirst");
+                    d3.selectAll('.limbaugh')
+                        .filter(function(d) { return d.number > 50 && d.number < 100 })
+                          .attr("class", "Lsecond");
+                    d3.selectAll('.limbaugh')
+                        .filter(function(d) { return d.number > 100 && d.number < 200 })
+                          .attr("class", "Lthird");
+
+
+                    d3.selectAll('.fas')
+                        .filter(function(d) { return d.number < 50 })
+                          .attr("class", "Ffirst");
+                    d3.selectAll('.fas')
+                        .filter(function(d) { return d.number > 50 && d.number < 100 })
+                          .attr("class", "Fsecond");
+                    d3.selectAll('.fas')
+                        .filter(function(d) { return d.number > 100 && d.number < 200 })
+                          .attr("class", "Fthird");
+
+                    // show FAS
+                    d3.select(".modeL").on("click", function(d) { 
+                      d3.selectAll(".fas").transition().style("opacity", 0);
+                      d3.selectAll(".station").transition().delay(100).style("opacity", 0);
+
+                      d3.selectAll(".Lfirst")
+                          .transition()
+                          .delay(1000)
+                          .style("opacity", 1)
+
+                       d3.selectAll(".Lsecond")   
+                          .transition() 
+                          .delay(1400)
+                          .style("opacity", 1)
+
+                       d3.selectAll(".Lthird")   
+                          .transition() 
+                          .delay(1800)
+                          .style("opacity", 1)
+                    })              
+                    // show L
+                    d3.select(".modeFAS").on("click", function(d) { 
+                      d3.selectAll(".fas").transition().delay(100).style("opacity", 1);
+                      d3.selectAll(".station").transition().delay(100).style("opacity", 0);
+
+                      d3.selectAll(".Lfirst").transition().style("opacity", 0);
+                      d3.selectAll(".Lsecond").transition().style("opacity", 0);
+                      d3.selectAll(".Lthird").transition().style("opacity", 0);
+
+                      d3.selectAll(".Ffirst")
+                          .transition()
+                          .delay(1000)
+                          .style("opacity", 1)
+
+                     d3.selectAll(".Fsecond")   
+                        .transition() 
+                        .delay(1400)
+                        .style("opacity", 1)
+
+                     d3.selectAll(".Fthird")   
+                        .transition() 
+                        .delay(1800)
+                        .style("opacity", 1)
+                    })                  
+                }
+                drawMarkets();
+              });   
+
+              d3.json("dataRadio.json", function(error, dataRadio) {
+                function drawStations() {
+                  // -------------------------------------------- Station
+                  var station = svg.selectAll("g.station")
+                    .data(dataRadio)
+                    .enter()
+                    .append("g")
+                    .attr("class", "station")
+                    .attr("transform", function(d) { 
+                      if (d.long!==-1 && d.lat!==-1) {
+                        return "translate(" + projection([d.long, d.lat]) + ")"; }
+                    });
+
+
+                  station.append("circle")
+                    .attr("r", 6)
+                    .style("fill", "red")
+                    .style("opacity", 0.45)
+                    .on("mouseover", function(d){ 
+                        d3.select(this).style("opacity", 1); 
+                        d3.select("#hovering").text(d.name);
+                    })              
+                    .on("mouseout", function(d){ 
+                        d3.select(this).style("opacity", 0.45); 
+                        d3.select("#hovering").text("");
+                    })
+                    .on("click", function(d) { 
+                      var audioElement = document.createElement('audio');
+                      audioElement.setAttribute('src', d.live);
+                      audioElement.play();
+                      setTimeout(function() { audioElement.pause()}, 5000);
+                      d3.select("#playing").text("Listening to: " + d.name)
+                    });
+
+                    d3.select(".modeLive").on("click", function(d) { 
+                      d3.selectAll(".station").transition().delay(100).style("opacity", 1);
+
+                      d3.selectAll(".Lfirst").transition().style("opacity", 0);
+                      d3.selectAll(".Lsecond").transition().style("opacity", 0);
+                      d3.selectAll(".Lthird").transition().style("opacity", 0);                      
+
+                      d3.selectAll(".Ffirst").transition().style("opacity", 0);
+                      d3.selectAll(".Fsecond").transition().style("opacity", 0);
+                      d3.selectAll(".Fthird").transition().style("opacity", 0);
+
+                    }) 
+
+                }
+                drawStations();
+              });                 
+
+
+            }
+
+        </script>
+  </div>
+
+<!-- End Document
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+</body>
+</html>
