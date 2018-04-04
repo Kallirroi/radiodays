@@ -68,9 +68,14 @@
           // -------------------------------------------- Setup
           var width  = 960,height = 500;
           var rateById = d3.map();
+
           var color = d3.scaleThreshold()
               color.domain([0, 5, 10, 15, 20, 25, 30, 35, 40])
               .range(d3.schemePuBuGn[9]);
+
+          var colorStations = "#000";
+          var colorLimbaugh = "#D74C5F";
+          var colorFAS = "#CF8F23";
           var Unemployment = d3.map();
           var Poverty = d3.map();
           var x = d3.scaleLinear()
@@ -144,13 +149,11 @@
                 .selectAll("path")
                 .data(topojson.feature(us, us.objects.counties).features)
                 .enter().append("path")
-                  // .attr("fill", "#000")
                   .attr("fill", function(d,i) { return color(d.rate = Unemployment.get(d.id)); })
                   // .attr("fill", function(d,i) { return color(d.rate = Poverty.get(d.id)); })
-                  .style("opacity", 0.8)
                   .attr("d", path)
                   .on("mouseover", function(){ 
-                      d3.select(this).style("fill", "rgba(0,0,0,0.8)"); 
+                      d3.select(this).style("fill", "rgba(0,0,0,0.5)"); 
                   })
                   .on("mouseout", function(){ 
                       d3.select(this).style("fill", function(d) { return color(d.rate = Unemployment.get(d.id)); })
@@ -181,25 +184,26 @@
 
 
                 station.append("circle")
-                  .attr("r", 6)
-                  .style("fill", "#000")
-                  .style("opacity", 0.7)
+                  .attr("r", 4)
+                  .style("fill", colorStations)
                   .style("stroke", "#000")
+                  .style("stroke-width", 0)
+                  .style("opacity", 0.7)
                   .on("mouseover", function(d){ 
                       d3.select(this).style("opacity", 1); 
                       d3.select("#hovering").text(d.name);
-                      d3.select(this).style("stroke-width", 2);
+                      d3.select(this).style("stroke-width", 1);
                   })              
                   .on("mouseout", function(d){ 
                       d3.select(this).style("opacity", 0.45); 
                       d3.select("#hovering").text("");
-                      d3.select(this).style("stroke-width", 1);
+                      d3.select(this).style("stroke-width", 0);
                   })
                   .on("click", function(d) { 
                     var audioElement = document.createElement('audio');
                     audioElement.setAttribute('src', d.live);
                     audioElement.play();
-                    setTimeout(function() { audioElement.pause()}, 5000);
+                    setTimeout(function() { audioElement.pause()}, 10000);
                     d3.select("#playing").text("Listening to: " + d.name);
                   });
 
@@ -235,41 +239,43 @@
 
                 //Limbaugh   
                 market.append("circle")
-                  .attr("r", 6)
+                  .attr("r", 4)
                   .attr("class", "limbaugh")
                   .style("opacity", 0)
                   .style("stroke", "#000")
-                  .style("fill", "rgba(255, 255, 255, 0.7)")
+                  .style("stroke-width", 0)
+                  .style("fill", colorLimbaugh)
                   .on("mouseover", function(d){ 
                       d3.select(this).style("fill", "rgba(255, 255, 255, 1)"); 
                       d3.select("#hovering").text(d.name);
-                      d3.select(this).style("stroke-width", 2);
+                      d3.select(this).style("stroke-width", 1);
                       d3.select("#playing").text(" ");
                   })              
                   .on("mouseout", function(d){ 
                       d3.select(this).style("fill", "rgba(255, 255, 255, 0.7)"); 
                       d3.select("#hovering").text(" ");
-                      d3.select(this).style("stroke-width", 1);
+                      d3.select(this).style("stroke-width", 0);
                       d3.select("#playing").text(" ");
                   })
 
                 //FAS
                 market.append("circle")
-                  .attr("r", 6)
+                  .attr("r", 4)
                   .attr("class", "fas")
                   .style("opacity", 0)
                   .style("stroke", "#000")
-                  .style("fill", "rgba(173, 140, 171, 0.8)")
+                  .style("stroke-width", 0)
+                  .style("fill", colorFAS)
                   .on("mouseover", function(d){ 
                       d3.select(this).style("fill", "rgba(173, 140, 171, 1)"); 
                       d3.select("#hovering").text(d.name);
-                      d3.select(this).style("stroke-width", 2);
+                      d3.select(this).style("stroke-width", 1);
                       d3.select("#playing").text(" ");
                   })              
                   .on("mouseout", function(d){ 
                       d3.select(this).style("fill", "rgba(173, 140, 171, 0.8)"); 
                       d3.select("#hovering").text(" ");
-                      d3.select(this).style("stroke-width", 1);
+                      d3.select(this).style("stroke-width", 0);
                       d3.select("#playing").text(" ");
                   })
 
@@ -295,9 +301,9 @@
                       .filter(function(d) { return d.number > 100 && d.number < 200 })
                         .attr("class", "Fthird");
 
-                  // show FAS
+                  // show L
                   d3.select(".modeL").on("click", function(d) { 
-                    d3.selectAll(".fas").transition().style("opacity", 0);
+                    // d3.selectAll(".fas").transition().style("opacity", 0);
                     d3.selectAll(".station").transition().delay(100).style("opacity", 0);
 
                     d3.selectAll(".Lfirst")
@@ -314,10 +320,16 @@
                         .transition() 
                         .delay(1800)
                         .style("opacity", 1)
+
+                    
+                    d3.selectAll(".Ffirst").transition().style("opacity", 0);
+                    d3.selectAll(".Fsecond").transition().style("opacity", 0);
+                    d3.selectAll(".Fthird").transition().style("opacity", 0);
+
                   })              
-                  // show L
+                  // show FAS
                   d3.select(".modeFAS").on("click", function(d) { 
-                    d3.selectAll(".fas").transition().delay(100).style("opacity", 1);
+                    // d3.selectAll(".fas").transition().delay(100).style("opacity", 1);
                     d3.selectAll(".station").transition().delay(100).style("opacity", 0);
 
                     d3.selectAll(".Lfirst").transition().style("opacity", 0);
