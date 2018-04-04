@@ -69,12 +69,12 @@
           var width  = 960,height = 500;
           var rateById = d3.map();
           var color = d3.scaleThreshold()
-              .domain(d3.range(2, 10))
+              color.domain([0, 5, 10, 15, 20, 25, 30, 35, 40])
               .range(d3.schemePuBuGn[9]);
           var Unemployment = d3.map();
           var Poverty = d3.map();
           var x = d3.scaleLinear()
-            .domain([1, 10])
+            .domain([0, 40])
             .rangeRound([600, 780]);
 
           var svg = d3.select("body").append("svg")
@@ -107,6 +107,7 @@
             .attr("text-anchor", "start")
             .attr("font-weight", "bold")
             .text("Unemployment rate");
+            // .text("Poverty rate");
 
           legend.call(d3.axisBottom(x)
             .tickSize(13)
