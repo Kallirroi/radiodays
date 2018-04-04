@@ -72,6 +72,7 @@
               .domain(d3.range(2, 10))
               .range(d3.schemePuBuGn[9]);
           var Unemployment = d3.map();
+          var Poverty = d3.map();
           var x = d3.scaleLinear()
             .domain([1, 10])
             .rangeRound([600, 780]);
@@ -116,16 +117,16 @@
 
 
           d3.queue()
-              // .defer(d3.json, "https://gist.githubusercontent.com/mbostock/4090846/raw/d534aba169207548a8a3d670c9c2cc719ff05c47/us.json")
               .defer(d3.json, "us-counties.json")
-              // .defer(d3.tsv, "Unemployment.tsv",  function(d) { Unemployment.set(d.id, +d.rate); })
-              .defer(d3.csv, "otherUnemployment.csv", row)
+              .defer(d3.csv, "unemployment.csv", row)
               .await(ready);
 
         // interplate data
           function row(d) {
             Unemployment.set(d.CensusId, +d.Unemployment);
+            Poverty.set(d.CensusId, +d.Poverty);
             d.Unemployment = +d.Unemployment
+            d.Poverty = +d.Poverty;
             return d;
           }
           function ready(error, us) {
@@ -143,12 +144,8 @@
                 .data(topojson.feature(us, us.objects.counties).features)
                 .enter().append("path")
                   // .attr("fill", "#000")
-                  .attr("fill", function(d,i) { 
-                    var test = Unemployment.get(d.id);
-                    if (test !== undefined) {  return color(d.rate = Unemployment.get(d.id)); }
-                    // else { return  color(d.rate = 3); }
-                     
-                  })
+                  .attr("fill", function(d,i) { return color(d.rate = Unemployment.get(d.id)); })
+                  // .attr("fill", function(d,i) { return color(d.rate = Poverty.get(d.id)); })
                   .style("opacity", 0.8)
                   .attr("d", path)
                   .on("mouseover", function(){ 
@@ -156,6 +153,7 @@
                   })
                   .on("mouseout", function(){ 
                       d3.select(this).style("fill", function(d) { return color(d.rate = Unemployment.get(d.id)); })
+                      // d3.select(this).style("fill", function(d) { return color(d.rate = Poverty.get(d.id)); })
                   })  
                 .append("title")
                   .text(function(d) { return d.rate + "%"; });
