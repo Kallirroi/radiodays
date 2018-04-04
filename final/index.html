@@ -28,7 +28,7 @@
 <body>
 <script src="https://d3js.org/d3.v4.min.js"></script>
 <script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
-<script src="https://d3js.org/topojson.v1.min.js"></script>
+<script src="https://d3js.org/topojson.v2.min.js"></script>
 <script src="https://d3js.org/d3-array.v1.min.js"></script>
 <script src="https://d3js.org/d3-geo.v1.min.js"></script>
 <script src="https://d3js.org/d3-geo-projection.v2.min.js"></script>
@@ -49,7 +49,7 @@
     </div>  -->  
     <div class="row">
       <div class="one-half column" style="margin-top: 5%">
-        <p>Recent analysis has shown that there is more polarization in Internet-poor and older communities than there is among those who get their news online. One potential reason for this is talk radio. It is available everywhere in America and is listened to by most of the local population. </p> <p>In the map below, we are comparing the coverage between Rush Limbaugh and FAS radio shows. The choropleth shows unemployment rates as of August, 2016, taken from the <a href="https://www.bls.gov/lau/#tables">Bureau of Labor Statistics.</a></p>
+        <p>Recent analysis has shown that there is more polarization in Internet-poor and older communities than there is among those who get their news online. One potential reason for this is talk radio. It is available everywhere in America and is listened to by most of the local population. </p> <p>In the map below, we are comparing the coverage between Rush Limbaugh and FAS radio shows. The choropleth shows Unemployment rates as of August, 2016, taken from the <a href="https://www.bls.gov/lau/#tables">Bureau of Labor Statistics.</a></p>
       </div>
     </div>       
     <div class="row">
@@ -71,7 +71,7 @@
           var color = d3.scaleThreshold()
               .domain(d3.range(2, 10))
               .range(d3.schemePuBuGn[9]);
-          var unemployment = d3.map();
+          var Unemployment = d3.map();
           var x = d3.scaleLinear()
             .domain([1, 10])
             .rangeRound([600, 780]);
@@ -116,223 +116,236 @@
 
 
           d3.queue()
-              .defer(d3.json, "https://gist.githubusercontent.com/mbostock/4090846/raw/d534aba169207548a8a3d670c9c2cc719ff05c47/us.json")
-              .defer(d3.tsv, "unemployment.tsv",  function(d) { unemployment.set(d.id, +d.rate); })
+              // .defer(d3.json, "https://gist.githubusercontent.com/mbostock/4090846/raw/d534aba169207548a8a3d670c9c2cc719ff05c47/us.json")
+              .defer(d3.json, "us-counties.json")
+              // .defer(d3.tsv, "Unemployment.tsv",  function(d) { Unemployment.set(d.id, +d.rate); })
+              .defer(d3.csv, "otherUnemployment.csv", row)
               .await(ready);
 
+        // interplate data
+          function row(d) {
+            Unemployment.set(d.CensusId, +d.Unemployment);
+            d.Unemployment = +d.Unemployment
+            return d;
+          }
+          function ready(error, us) {
 
-            function ready(error, us) {
+            if (error) throw error;
 
-              if (error) throw error;
+            var projection = d3.geoAlbersUsa().fitSize([width, height],topojson.feature(us, us.objects.counties));
+            var path = d3.geoPath(projection);
 
-              var projection = d3.geoAlbersUsa().fitSize([width, height],topojson.feature(us, us.objects.counties));
-              var path = d3.geoPath(projection);
+            function loadMap() {
+              // -------------------------------------------- Unemployment
+              svg.append("g")
+                  .attr("class", "counties")
+                .selectAll("path")
+                .data(topojson.feature(us, us.objects.counties).features)
+                .enter().append("path")
+                  // .attr("fill", "#000")
+                  .attr("fill", function(d,i) { 
+                    var test = Unemployment.get(d.id);
+                    if (test !== undefined) {  return color(d.rate = Unemployment.get(d.id)); }
+                    // else { return  color(d.rate = 3); }
+                     
+                  })
+                  .style("opacity", 0.8)
+                  .attr("d", path)
+                  .on("mouseover", function(){ 
+                      d3.select(this).style("fill", "rgba(0,0,0,0.8)"); 
+                  })
+                  .on("mouseout", function(){ 
+                      d3.select(this).style("fill", function(d) { return color(d.rate = Unemployment.get(d.id)); })
+                  })  
+                .append("title")
+                  .text(function(d) { return d.rate + "%"; });
 
-              function loadMap() {
-                // -------------------------------------------- Unemployment
-                svg.append("g")
-                    .attr("class", "counties")
-                  .selectAll("path")
-                  .data(topojson.feature(us, us.objects.counties).features)
-                  .enter().append("path")
-                    .attr("fill", function(d) { return color(d.rate = unemployment.get(d.id)); })
-                    .style("opacity", 0.8)
-                    .attr("d", path)
-                    .on("mouseover", function(){ 
-                        d3.select(this).style("fill", "rgba(0,0,0,0.8)"); 
-                    })
-                    .on("mouseout", function(){ 
-                        d3.select(this).style("fill", function(d) { return color(d.rate = unemployment.get(d.id)); })
-                    })  
-                  .append("title")
-                    .text(function(d) { return d.rate + "%"; });
+              svg.append("path")
+                  .datum(topojson.mesh(us, us.objects.states, function(a, b) { return a !== b; }))
+                  .attr("class", "states")
+                  .attr("d", path);
+            }
+            loadMap();
 
-                svg.append("path")
-                    .datum(topojson.mesh(us, us.objects.states, function(a, b) { return a.id !== b.id; }))
-                    .attr("class", "states")
-                    .attr("d", path);
+            d3.json("dataRadio.json", function(error, dataRadio) {
+              function drawStations() {
+                // -------------------------------------------- Station
+                var station = svg.selectAll("g.station")
+                  .data(dataRadio)
+                  .enter()
+                  .append("g")
+                  .attr("class", "station")
+                  .attr("transform", function(d) { 
+                    if (d.long!==-1 && d.lat!==-1) {
+                      return "translate(" + projection([d.long, d.lat]) + ")"; }
+                  });
+
+
+                station.append("circle")
+                  .attr("r", 6)
+                  .style("fill", "#000")
+                  .style("opacity", 0.7)
+                  .style("stroke", "#000")
+                  .on("mouseover", function(d){ 
+                      d3.select(this).style("opacity", 1); 
+                      d3.select("#hovering").text(d.name);
+                      d3.select(this).style("stroke-width", 2);
+                  })              
+                  .on("mouseout", function(d){ 
+                      d3.select(this).style("opacity", 0.45); 
+                      d3.select("#hovering").text("");
+                      d3.select(this).style("stroke-width", 1);
+                  })
+                  .on("click", function(d) { 
+                    var audioElement = document.createElement('audio');
+                    audioElement.setAttribute('src', d.live);
+                    audioElement.play();
+                    setTimeout(function() { audioElement.pause()}, 5000);
+                    d3.select("#playing").text("Listening to: " + d.name);
+                  });
+
+                  d3.select(".modeLive").on("click", function(d) { 
+                    d3.selectAll(".station").transition().delay(100).style("opacity", 1);
+
+                    d3.selectAll(".Lfirst").transition().style("opacity", 0);
+                    d3.selectAll(".Lsecond").transition().style("opacity", 0);
+                    d3.selectAll(".Lthird").transition().style("opacity", 0);                      
+
+                    d3.selectAll(".Ffirst").transition().style("opacity", 0);
+                    d3.selectAll(".Fsecond").transition().style("opacity", 0);
+                    d3.selectAll(".Fthird").transition().style("opacity", 0);
+
+                  }) 
+
               }
-              loadMap();
+              drawStations();
+            });                   
 
-              d3.json("dataRadio.json", function(error, dataRadio) {
-                function drawStations() {
-                  // -------------------------------------------- Station
-                  var station = svg.selectAll("g.station")
-                    .data(dataRadio)
-                    .enter()
-                    .append("g")
-                    .attr("class", "station")
-                    .attr("transform", function(d) { 
-                      if (d.long!==-1 && d.lat!==-1) {
-                        return "translate(" + projection([d.long, d.lat]) + ")"; }
-                    });
+            d3.json("dataMarket.json", function(error, dataMarket) {
+              function drawMarkets() {
+                // -------------------------------------------- market
+                var market = svg.selectAll("g.market")
+                  .data(dataMarket)
+                  .enter()
+                  .append("g")
+                  .attr("class", "market")
+                  .attr("transform", function(d) { 
+                    if (d.long!==-1 && d.lat!==-1) {
+                      return "translate(" + projection([d.long, d.lat]) + ")"; }
+                  });
 
+                //Limbaugh   
+                market.append("circle")
+                  .attr("r", 6)
+                  .attr("class", "limbaugh")
+                  .style("opacity", 0)
+                  .style("stroke", "#000")
+                  .style("fill", "rgba(255, 255, 255, 0.7)")
+                  .on("mouseover", function(d){ 
+                      d3.select(this).style("fill", "rgba(255, 255, 255, 1)"); 
+                      d3.select("#hovering").text(d.name);
+                      d3.select(this).style("stroke-width", 2);
+                      d3.select("#playing").text(" ");
+                  })              
+                  .on("mouseout", function(d){ 
+                      d3.select(this).style("fill", "rgba(255, 255, 255, 0.7)"); 
+                      d3.select("#hovering").text(" ");
+                      d3.select(this).style("stroke-width", 1);
+                      d3.select("#playing").text(" ");
+                  })
 
-                  station.append("circle")
-                    .attr("r", 6)
-                    .style("fill", "#000")
-                    .style("opacity", 0.7)
-                    .style("stroke", "#000")
-                    .on("mouseover", function(d){ 
-                        d3.select(this).style("opacity", 1); 
-                        d3.select("#hovering").text(d.name);
-                        d3.select(this).style("stroke-width", 2);
-                    })              
-                    .on("mouseout", function(d){ 
-                        d3.select(this).style("opacity", 0.45); 
-                        d3.select("#hovering").text("");
-                        d3.select(this).style("stroke-width", 1);
-                    })
-                    .on("click", function(d) { 
-                      var audioElement = document.createElement('audio');
-                      audioElement.setAttribute('src', d.live);
-                      audioElement.play();
-                      setTimeout(function() { audioElement.pause()}, 5000);
-                      d3.select("#playing").text("Listening to: " + d.name);
-                    });
-
-                    d3.select(".modeLive").on("click", function(d) { 
-                      d3.selectAll(".station").transition().delay(100).style("opacity", 1);
-
-                      d3.selectAll(".Lfirst").transition().style("opacity", 0);
-                      d3.selectAll(".Lsecond").transition().style("opacity", 0);
-                      d3.selectAll(".Lthird").transition().style("opacity", 0);                      
-
-                      d3.selectAll(".Ffirst").transition().style("opacity", 0);
-                      d3.selectAll(".Fsecond").transition().style("opacity", 0);
-                      d3.selectAll(".Fthird").transition().style("opacity", 0);
-
-                    }) 
-
-                }
-                drawStations();
-              });                   
-
-              d3.json("dataMarket.json", function(error, dataMarket) {
-                function drawMarkets() {
-                  // -------------------------------------------- market
-                  var market = svg.selectAll("g.market")
-                    .data(dataMarket)
-                    .enter()
-                    .append("g")
-                    .attr("class", "market")
-                    .attr("transform", function(d) { 
-                      if (d.long!==-1 && d.lat!==-1) {
-                        return "translate(" + projection([d.long, d.lat]) + ")"; }
-                    });
-
-                  //Limbaugh   
-                  market.append("circle")
-                    .attr("r", 6)
-                    .attr("class", "limbaugh")
-                    .style("opacity", 0)
-                    .style("stroke", "#000")
-                    .style("fill", "rgba(255, 255, 255, 0.7)")
-                    .on("mouseover", function(d){ 
-                        d3.select(this).style("fill", "rgba(255, 255, 255, 1)"); 
-                        d3.select("#hovering").text(d.name);
-                        d3.select(this).style("stroke-width", 2);
-                        d3.select("#playing").text(" ");
-                    })              
-                    .on("mouseout", function(d){ 
-                        d3.select(this).style("fill", "rgba(255, 255, 255, 0.7)"); 
-                        d3.select("#hovering").text(" ");
-                        d3.select(this).style("stroke-width", 1);
-                        d3.select("#playing").text(" ");
-                    })
-
-                  //FAS
-                  market.append("circle")
-                    .attr("r", 6)
-                    .attr("class", "fas")
-                    .style("opacity", 0)
-                    .style("stroke", "#000")
-                    .style("fill", "rgba(173, 140, 171, 0.8)")
-                    .on("mouseover", function(d){ 
-                        d3.select(this).style("fill", "rgba(173, 140, 171, 1)"); 
-                        d3.select("#hovering").text(d.name);
-                        d3.select(this).style("stroke-width", 2);
-                        d3.select("#playing").text(" ");
-                    })              
-                    .on("mouseout", function(d){ 
-                        d3.select(this).style("fill", "rgba(173, 140, 171, 0.8)"); 
-                        d3.select("#hovering").text(" ");
-                        d3.select(this).style("stroke-width", 1);
-                        d3.select("#playing").text(" ");
-                    })
+                //FAS
+                market.append("circle")
+                  .attr("r", 6)
+                  .attr("class", "fas")
+                  .style("opacity", 0)
+                  .style("stroke", "#000")
+                  .style("fill", "rgba(173, 140, 171, 0.8)")
+                  .on("mouseover", function(d){ 
+                      d3.select(this).style("fill", "rgba(173, 140, 171, 1)"); 
+                      d3.select("#hovering").text(d.name);
+                      d3.select(this).style("stroke-width", 2);
+                      d3.select("#playing").text(" ");
+                  })              
+                  .on("mouseout", function(d){ 
+                      d3.select(this).style("fill", "rgba(173, 140, 171, 0.8)"); 
+                      d3.select("#hovering").text(" ");
+                      d3.select(this).style("stroke-width", 1);
+                      d3.select("#playing").text(" ");
+                  })
 
 
-                    d3.selectAll('.limbaugh')
-                        .filter(function(d) { return d.number < 50 })
-                          .attr("class", "Lfirst");
-                    d3.selectAll('.limbaugh')
-                        .filter(function(d) { return d.number > 50 && d.number < 100 })
-                          .attr("class", "Lsecond");
-                    d3.selectAll('.limbaugh')
-                        .filter(function(d) { return d.number > 100 && d.number < 200 })
-                          .attr("class", "Lthird");
+                  d3.selectAll('.limbaugh')
+                      .filter(function(d) { return d.number < 50 })
+                        .attr("class", "Lfirst");
+                  d3.selectAll('.limbaugh')
+                      .filter(function(d) { return d.number > 50 && d.number < 100 })
+                        .attr("class", "Lsecond");
+                  d3.selectAll('.limbaugh')
+                      .filter(function(d) { return d.number > 100 && d.number < 200 })
+                        .attr("class", "Lthird");
 
 
-                    d3.selectAll('.fas')
-                        .filter(function(d) { return d.number < 50 })
-                          .attr("class", "Ffirst");
-                    d3.selectAll('.fas')
-                        .filter(function(d) { return d.number > 50 && d.number < 100 })
-                          .attr("class", "Fsecond");
-                    d3.selectAll('.fas')
-                        .filter(function(d) { return d.number > 100 && d.number < 200 })
-                          .attr("class", "Fthird");
+                  d3.selectAll('.fas')
+                      .filter(function(d) { return d.number < 50 })
+                        .attr("class", "Ffirst");
+                  d3.selectAll('.fas')
+                      .filter(function(d) { return d.number > 50 && d.number < 100 })
+                        .attr("class", "Fsecond");
+                  d3.selectAll('.fas')
+                      .filter(function(d) { return d.number > 100 && d.number < 200 })
+                        .attr("class", "Fthird");
 
-                    // show FAS
-                    d3.select(".modeL").on("click", function(d) { 
-                      d3.selectAll(".fas").transition().style("opacity", 0);
-                      d3.selectAll(".station").transition().delay(100).style("opacity", 0);
+                  // show FAS
+                  d3.select(".modeL").on("click", function(d) { 
+                    d3.selectAll(".fas").transition().style("opacity", 0);
+                    d3.selectAll(".station").transition().delay(100).style("opacity", 0);
 
-                      d3.selectAll(".Lfirst")
-                          .transition()
-                          .delay(1000)
-                          .style("opacity", 1)
+                    d3.selectAll(".Lfirst")
+                        .transition()
+                        .delay(1000)
+                        .style("opacity", 1)
 
-                       d3.selectAll(".Lsecond")   
-                          .transition() 
-                          .delay(1400)
-                          .style("opacity", 1)
-
-                       d3.selectAll(".Lthird")   
-                          .transition() 
-                          .delay(1800)
-                          .style("opacity", 1)
-                    })              
-                    // show L
-                    d3.select(".modeFAS").on("click", function(d) { 
-                      d3.selectAll(".fas").transition().delay(100).style("opacity", 1);
-                      d3.selectAll(".station").transition().delay(100).style("opacity", 0);
-
-                      d3.selectAll(".Lfirst").transition().style("opacity", 0);
-                      d3.selectAll(".Lsecond").transition().style("opacity", 0);
-                      d3.selectAll(".Lthird").transition().style("opacity", 0);
-
-                      d3.selectAll(".Ffirst")
-                          .transition()
-                          .delay(1000)
-                          .style("opacity", 1)
-
-                     d3.selectAll(".Fsecond")   
+                     d3.selectAll(".Lsecond")   
                         .transition() 
                         .delay(1400)
                         .style("opacity", 1)
 
-                     d3.selectAll(".Fthird")   
+                     d3.selectAll(".Lthird")   
                         .transition() 
                         .delay(1800)
                         .style("opacity", 1)
-                    })                  
-                }
-                drawMarkets();
-              });               
+                  })              
+                  // show L
+                  d3.select(".modeFAS").on("click", function(d) { 
+                    d3.selectAll(".fas").transition().delay(100).style("opacity", 1);
+                    d3.selectAll(".station").transition().delay(100).style("opacity", 0);
+
+                    d3.selectAll(".Lfirst").transition().style("opacity", 0);
+                    d3.selectAll(".Lsecond").transition().style("opacity", 0);
+                    d3.selectAll(".Lthird").transition().style("opacity", 0);
+
+                    d3.selectAll(".Ffirst")
+                        .transition()
+                        .delay(1000)
+                        .style("opacity", 1)
+
+                   d3.selectAll(".Fsecond")   
+                      .transition() 
+                      .delay(1400)
+                      .style("opacity", 1)
+
+                   d3.selectAll(".Fthird")   
+                      .transition() 
+                      .delay(1800)
+                      .style("opacity", 1)
+                  })                  
+              }
+              drawMarkets();
+            });               
 
 
-            }
+          }
 
         </script>
   </div>
