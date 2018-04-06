@@ -58,14 +58,24 @@
           <a href="#livefeed" class="modeLive">Live feed</a>
           <a href="#limbaugh" class="modeL">Limbaugh</a>
           <a href="#fas" class="modeFAS">FAS</a>
+          <a href="#knob" class="modeKnob">Knob</a>
         </div>
         <div id="hovering"></div>
         <div id="playing"></div>
       </div>
     </div>
+    <div class="row" align="center">
+      <input type="range" align="center" min="-1" max="1" value="0.0" step="0.01" class="slider" id="scoreSlider">
+    </div>
         <script type="text/javascript">
 
           // -------------------------------------------- Setup
+
+          var fasCountMax = 0;
+          var limbaughCountMax  = 0;
+          var maxDiff =0;
+          var minDiff = 2;
+
           var width  = 960,height = 500;
           var rateById = d3.map();
 
@@ -85,6 +95,22 @@
           var svg = d3.select("body").append("svg")
               .attr("width", width)
               .attr("height", height);
+
+          // ---------------------------------------------- Utility
+          function lerpColor(a, b, amount) { 
+
+              var ah = parseInt(a.replace(/#/g, ''), 16),
+                  ar = ah >> 16, ag = ah >> 8 & 0xff, ab = ah & 0xff,
+                  bh = parseInt(b.replace(/#/g, ''), 16),
+                  br = bh >> 16, bg = bh >> 8 & 0xff, bb = bh & 0xff,
+                  rr = ar + amount * (br - ar),
+                  rg = ag + amount * (bg - ag),
+                  rb = ab + amount * (bb - ab);
+
+              return '#' + ((1 << 24) + (rr << 16) + (rg << 8) + rb | 0).toString(16).slice(1);
+          }
+
+
 
           // // -------------------------------------------- Legend
           var legend = svg.append("g")
@@ -239,7 +265,11 @@
 
                 //Limbaugh   
                 market.append("circle")
-                  .attr("r", 4)
+                  .attr("r", function(d){
+                    //console.log("adding limbaugh market: " + d.limbaughCount);
+                    //return d.limbaughCount;
+                    return 4;
+                  })
                   .attr("class", "limbaugh")
                   .style("opacity", 0)
                   .style("stroke", "#000")
@@ -260,7 +290,11 @@
 
                 //FAS
                 market.append("circle")
-                  .attr("r", 4)
+                  .attr("r", function(d){
+                    //console.log("adding limbaugh market: " + d.limbaughCount);
+                    //return d.fasCount;
+                    return 4;
+                  })
                   .attr("class", "fas")
                   .style("opacity", 0)
                   .style("stroke", "#000")
@@ -278,6 +312,71 @@
                       d3.select(this).style("stroke-width", 0);
                       d3.select("#playing").text(" ");
                   })
+
+                //calculate totals!
+                fasCountMax = 0;
+                limbaughCountMax = 0;
+                console.dir(dataMarket);
+                for(i = 0; i<dataMarket.length; i++){
+                    //console.log(dataMarket[i].fasCount);
+                    fasCountMax = Math.max(fasCountMax, dataMarket[i].fasCount);
+                    limbaughCountMax = Math.max(limbaughCountMax, dataMarket[i].limbaughCount);
+                }
+
+                for(i = 0; i<dataMarket.length; i++){
+                      var libScore = dataMarket[i].fasCount / fasCountMax;
+                      var conScore = dataMarket[i].limbaughCount/ limbaughCountMax;
+
+                      var amount = conScore - libScore;
+                      maxDiff = Math.max(amount, maxDiff);
+                      minDiff = Math.min(amount, minDiff);
+                }
+
+
+
+                console.log('fas max: ' + fasCountMax + ' limbaugh max: ' + limbaughCountMax);
+                console.log('max diff: ' + maxDiff + ' minDiff: ' + minDiff);
+
+
+                //Knob
+                market.append("circle")
+                  .attr("r", function(d){
+                    //console.log("adding limbaugh market: " + d.limbaughCount);
+                    return (d.limbaughCount + d.fasCount);
+                    //return 4;
+                  })
+                  .attr("class", "knob")
+                  .style("opacity", 0)
+                  .style("stroke", "#000")
+                  .style("stroke-width", 0)
+                  .style("fill", function(d){
+                      var libScore = d.fasCount / fasCountMax;
+                      var conScore = d.limbaughCount/ limbaughCountMax;
+                      var amount = libScore/(libScore + conScore);
+                      //var amount = d.fasCount/(d.limbaughCount + d.fasCount);
+                      //console.log("amount = " + amount);
+                      //amount = 1;
+                    return lerpColor('#ff0000', '#0000ff', amount);
+                  })
+                  .attr("score",function(d){
+                      var libScore = d.fasCount / fasCountMax;
+                      var conScore = d.limbaughCount/ limbaughCountMax;
+                      var amount = libScore/(libScore + conScore);
+                      return amount;
+                  })
+                  .on("mouseover", function(d){ 
+                      //d3.select(this).style("fill", "rgba(173, 140, 171, 1)"); 
+                      d3.select("#hovering").text(d.name);
+                      d3.select(this).style("stroke-width", 1);
+                      d3.select("#playing").text(" ");
+                  })              
+                  .on("mouseout", function(d){ 
+                      //d3.select(this).style("fill", "rgba(173, 140, 171, 0.8)"); 
+                      d3.select("#hovering").text(" ");
+                      d3.select(this).style("stroke-width", 0);
+                      d3.select("#playing").text(" ");
+                  })
+
 
 
                   d3.selectAll('.limbaugh')
@@ -300,6 +399,17 @@
                   d3.selectAll('.fas')
                       .filter(function(d) { return d.number > 100 && d.number < 200 })
                         .attr("class", "Fthird");
+
+                  d3.selectAll('.knob')
+                      .filter(function(d) { return d.number < 50 })
+                        .attr("class", "Kfirst");
+                  d3.selectAll('.knob')
+                      .filter(function(d) { return d.number > 50 && d.number < 100 })
+                        .attr("class", "Ksecond");
+                  d3.selectAll('.knob')
+                      .filter(function(d) { return d.number > 100 && d.number < 200 })
+                        .attr("class", "Kthird");
+
 
                   // show L
                   d3.select(".modeL").on("click", function(d) { 
@@ -326,6 +436,10 @@
                     d3.selectAll(".Fsecond").transition().style("opacity", 0);
                     d3.selectAll(".Fthird").transition().style("opacity", 0);
 
+                    d3.selectAll(".Kfirst").transition().style("opacity", 0);
+                    d3.selectAll(".Ksecond").transition().style("opacity", 0);
+                    d3.selectAll(".Kthird").transition().style("opacity", 0);
+
                   })              
                   // show FAS
                   d3.select(".modeFAS").on("click", function(d) { 
@@ -335,6 +449,10 @@
                     d3.selectAll(".Lfirst").transition().style("opacity", 0);
                     d3.selectAll(".Lsecond").transition().style("opacity", 0);
                     d3.selectAll(".Lthird").transition().style("opacity", 0);
+
+                    d3.selectAll(".Kfirst").transition().style("opacity", 0);
+                    d3.selectAll(".Ksecond").transition().style("opacity", 0);
+                    d3.selectAll(".Kthird").transition().style("opacity", 0);
 
                     d3.selectAll(".Ffirst")
                         .transition()
@@ -350,12 +468,158 @@
                       .transition() 
                       .delay(1500)
                       .style("opacity", 1)
+                  })
+
+                  //show knob:
+                  d3.select(".modeKnob").on("click", function(d) { 
+                    // d3.selectAll(".fas").transition().delay(100).style("opacity", 1);
+                    d3.selectAll(".station").transition().delay(100).style("opacity", 0);
+
+                    d3.selectAll(".Lfirst").transition().style("opacity", 0);
+                    d3.selectAll(".Lsecond").transition().style("opacity", 0);
+                    d3.selectAll(".Lthird").transition().style("opacity", 0);
+
+                    d3.selectAll(".Ffirst").transition().style("opacity", 0);
+                    d3.selectAll(".Fsecond").transition().style("opacity", 0);
+                    d3.selectAll(".Fthird").transition().style("opacity", 0);
+
+                    d3.selectAll(".Kfirst")
+                        .transition()
+                        .delay(500)
+                        .style("opacity", .8)
+
+                   d3.selectAll(".Ksecond")   
+                      .transition() 
+                      .delay(1000)
+                      .style("opacity", .8)
+
+                   d3.selectAll(".Kthird")   
+                      .transition() 
+                      .delay(1500)
+                      .style("opacity", .8)
                   })                  
               }
               drawMarkets();
             });               
 
 
+          }
+
+          document.getElementById("scoreSlider").oninput = function(){
+            updateSlider(this.value);
+          }
+          function updateSlider(value){
+
+            cutoff = 0.1;
+            if(Math.abs(value)<cutoff){
+              value = 0;
+            }
+
+
+            // d3.selectAll(".fas").transition().delay(100).style("opacity", 1);
+            d3.selectAll(".station").transition().delay(100).style("opacity", 0);
+
+            d3.selectAll(".Lfirst").transition().style("opacity", 0);
+            d3.selectAll(".Lsecond").transition().style("opacity", 0);
+            d3.selectAll(".Lthird").transition().style("opacity", 0);
+
+            d3.selectAll(".Ffirst").transition().style("opacity", 0);
+            d3.selectAll(".Fsecond").transition().style("opacity", 0);
+            d3.selectAll(".Fthird").transition().style("opacity", 0);
+
+
+
+            d3.selectAll(".Kfirst")
+                .transition()
+                .style("opacity", function(d){
+                      var libScore = d.fasCount / fasCountMax;
+                      var conScore = d.limbaughCount/ limbaughCountMax;
+
+                      var amount = conScore - libScore;
+                      amount = (amount - minDiff)/(maxDiff-minDiff)*2 - 1;
+
+                      //var amount = libScore/(libScore + conScore);
+                      //console.log("amount: " + amount);
+
+                      if(value>0){
+                        if(amount>value){
+                          return 0.8;
+                        }else{
+                          return 0.0;
+                        }
+                      }
+
+                      if(value < 0){
+                        if(amount<value){
+                          return 0.8;
+                        }else{
+                          return 0.0;
+                        }                        
+                      }
+
+                      return 0.8;
+                })
+
+           d3.selectAll(".Ksecond")   
+              .transition() 
+              .style("opacity", function(d){
+                      var libScore = d.fasCount / fasCountMax;
+                      var conScore = d.limbaughCount/ limbaughCountMax;
+
+                      var amount = conScore - libScore;
+                                            amount = (amount - minDiff)/(maxDiff-minDiff)*2 - 1;
+
+                      //var amount = libScore/(libScore + conScore);
+                      //console.log("amount: " + amount);
+
+                      if(value>0){
+                        if(amount>value){
+                          return 0.8;
+                        }else{
+                          return 0.0;
+                        }
+                      }
+
+                      if(value < 0){
+                        if(amount<value){
+                          return 0.8;
+                        }else{
+                          return 0.0;
+                        }                        
+                      }
+
+                      return 0.8;
+                })
+
+           d3.selectAll(".Kthird")   
+              .transition() 
+              .style("opacity", function(d){
+                      var libScore = d.fasCount / fasCountMax;
+                      var conScore = d.limbaughCount/ limbaughCountMax;
+
+                      var amount = conScore - libScore;
+                      amount = (amount - minDiff)/(maxDiff-minDiff)*2 - 1;
+                      //var amount = libScore/(libScore + conScore);
+                      //console.log("amount: " + amount);
+
+                      if(value>0){
+                        if(amount>value){
+                          return 0.8;
+                        }else{
+                          return 0.0;
+                        }
+                      }
+
+                      if(value < 0){
+                        if(amount<value){
+                          return 0.8;
+                        }else{
+                          return 0.0;
+                        }                        
+                      }
+
+                      return 0.8;
+                })  
           }
 
         </script>
