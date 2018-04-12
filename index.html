@@ -58,7 +58,7 @@
           <a href="#livefeed" class="modeLive">Live feed</a>
           <a href="#limbaugh" class="modeL">Limbaugh</a>
           <a href="#fas" class="modeFAS">FAS</a>
-          <a href="#knob" class="modeKnob">Knob</a>
+          <a href="#knob" id="radioKnob" class="modeKnob">Knob</a>
         </div>
         <div id="hovering"></div>
         <div id="playing"></div>
@@ -67,6 +67,7 @@
     <div class="row" align="center">
       <input type="range" align="center" min="-1" max="1" value="0.0" step="0.01" class="slider" id="scoreSlider">
     </div>
+        <script src="dataMarket_test.js"></script>
         <script type="text/javascript">
 
           // -------------------------------------------- Setup
@@ -92,6 +93,124 @@
             .domain([0, 40])
             .rangeRound([600, 780]);
 
+
+          var radioScan = false;
+            //handleRadioScan();
+          document.getElementById("radioKnob").onclick=function(){
+            radioScan=!radioScan;
+
+          }
+
+
+          //load json!
+          var marketInfo = JSON.parse(market);
+          console.dir(marketInfo);
+
+          //calculate aggregate stuff!
+          fasCountMax = 0;
+          limbaughCountMax = 0;
+          console.dir(marketInfo);
+          for(i = 0; i<marketInfo.length; i++){
+              //console.log(dataMarket[i].fasCount);
+              fasCountMax = Math.max(fasCountMax, marketInfo[i].fasPercent);
+              limbaughCountMax = Math.max(limbaughCountMax, marketInfo[i].limbaughPercent);
+          }
+
+          for(i = 0; i<marketInfo.length; i++){
+                var libScore = marketInfo[i].fasPercent / fasCountMax;
+                var conScore = marketInfo[i].limbaughPercent/ limbaughCountMax;
+
+                var amount = conScore - libScore;
+                maxDiff = Math.max(amount, maxDiff);
+                minDiff = Math.min(amount, minDiff);
+          }
+
+          console.log('fas max: ' + fasCountMax + ' limbaugh max: ' + limbaughCountMax);
+          console.log('max diff: ' + maxDiff + ' minDiff: ' + minDiff);
+          window.setInterval(handleRadioScan, 15000);
+          //handleRadioScan();
+          //document.getElementById("radioKnob").onclick = handleRadioScan();
+          function handleRadioScan(){
+              console.log('doing radioscan!');
+              
+              if(radioScan){
+                  //load random thing that's open!
+                  available=[];
+                  for(i= 0; i<marketInfo.length; i++){
+                    //make list of available
+                    inside = false;
+                    var libScore = marketInfo[i].fasPercent / fasCountMax;
+                    var conScore = marketInfo[i].limbaughPercent/ limbaughCountMax;
+
+                    var amount = conScore - libScore;
+                    amount = (amount - minDiff)/(maxDiff-minDiff)*2 - 1;
+                    //var amount = libScore/(libScore + conScore);
+                    //console.log("amount: " + amount);
+
+                    value = document.getElementById("scoreSlider").value;
+                    if(Math.abs(value)<0.1){
+                        value = 0;
+                    }
+
+                    if(value>0){
+                      if(amount>value){
+                        inside = true;
+                      }else{
+                        inside = false;
+                      }
+                    }
+
+                    if(value < 0){
+                      if(amount<value){
+                        inside = true;
+                      }else{
+                        inside=false;
+                      }                        
+                    }
+
+                    if(value == 0){
+                      inside=true;
+                    }
+                    if(inside){
+                      //console.log('INSIDE');
+                      //console.dir(marketInfo[i]);
+                      for(j=0; j<marketInfo[i].conservative_live_link.length; j++){
+                          available.push(marketInfo[i].conservative_live_link[j]);  
+                      }
+                      for(j=0; j<marketInfo[i].liberal_live_link.length; j++){
+                          available.push(marketInfo[i].liberal_live_link[j]);  
+                      }
+                    }
+
+                  }
+
+                  //select one of the available ones:
+                  //console.log(Math.random());
+                  idx = Math.round(Math.random() * available.length);
+                  if(available.length>0){
+                      link = available[idx];
+
+                      if(link.includes('heart')){
+                        link = link + '?autoplay=true';
+                      }
+                      console.log('using radio link ')
+                      console.log(link);
+
+                      document.getElementById('radioPlayer').src = link;
+                      //console.dir(available);                          
+                  }else{
+                      console.log('could not find radio link!');
+                  }
+
+
+
+
+              }    
+              
+          }
+
+
+
           var svg = d3.select("body").append("svg")
               .attr("width", width)
               .attr("height", height);
@@ -108,6 +227,10 @@
                   rb = ab + amount * (bb - ab);
 
               return '#' + ((1 << 24) + (rr << 16) + (rg << 8) + rb | 0).toString(16).slice(1);
+          }
+
+          function reloadIframe(){
+            document.getElementById('radioPlayer').src = document.getElementById('radioPlayer').src;
           }
 
 
@@ -195,6 +318,10 @@
             }
             loadMap();
 
+
+
+
+
             d3.json("dataRadio.json", function(error, dataRadio) {
               function drawStations() {
                 // -------------------------------------------- Station
@@ -250,7 +377,13 @@
               drawStations();
             });                   
 
-            d3.json("dataMarket.json", function(error, dataMarket) {
+            d3.json("dataMarket_rd.json", function(error, dataMarket) {
+
+
+
+
+
+
               function drawMarkets() {
                 // -------------------------------------------- market
                 var market = svg.selectAll("g.market")
@@ -313,36 +446,13 @@
                       d3.select("#playing").text(" ");
                   })
 
-                //calculate totals!
-                fasCountMax = 0;
-                limbaughCountMax = 0;
-                console.dir(dataMarket);
-                for(i = 0; i<dataMarket.length; i++){
-                    //console.log(dataMarket[i].fasCount);
-                    fasCountMax = Math.max(fasCountMax, dataMarket[i].fasCount);
-                    limbaughCountMax = Math.max(limbaughCountMax, dataMarket[i].limbaughCount);
-                }
-
-                for(i = 0; i<dataMarket.length; i++){
-                      var libScore = dataMarket[i].fasCount / fasCountMax;
-                      var conScore = dataMarket[i].limbaughCount/ limbaughCountMax;
-
-                      var amount = conScore - libScore;
-                      maxDiff = Math.max(amount, maxDiff);
-                      minDiff = Math.min(amount, minDiff);
-                }
-
-
-
-                console.log('fas max: ' + fasCountMax + ' limbaugh max: ' + limbaughCountMax);
-                console.log('max diff: ' + maxDiff + ' minDiff: ' + minDiff);
-
+                
 
                 //Knob
                 market.append("circle")
                   .attr("r", function(d){
                     //console.log("adding limbaugh market: " + d.limbaughCount);
-                    return (d.limbaughCount + d.fasCount);
+                    return 5*(d.limbaughCount + d.fasCount);
                     //return 4;
                   })
                   .attr("class", "knob")
@@ -350,8 +460,10 @@
                   .style("stroke", "#000")
                   .style("stroke-width", 0)
                   .style("fill", function(d){
-                      var libScore = d.fasCount / fasCountMax;
-                      var conScore = d.limbaughCount/ limbaughCountMax;
+                      //var libScore = d.fasCount / fasCountMax;
+                      var libScore = d.fasPercent / fasCountMax;
+                      //var conScore = d.limbaughCount/ limbaughCountMax;
+                      var conScore = d.limbaughPercent / limbaughCountMax;
                       var amount = libScore/(libScore + conScore);
                       //var amount = d.fasCount/(d.limbaughCount + d.fasCount);
                       //console.log("amount = " + amount);
@@ -359,8 +471,13 @@
                     return lerpColor('#ff0000', '#0000ff', amount);
                   })
                   .attr("score",function(d){
-                      var libScore = d.fasCount / fasCountMax;
-                      var conScore = d.limbaughCount/ limbaughCountMax;
+                      //var libScore = d.fasCount / fasCountMax;
+                     // var conScore = d.limbaughCount/ limbaughCountMax;
+                      //var amount = libScore/(libScore + conScore);
+                      //var libScore = d.fasCount / fasCountMax;
+                      var libScore = d.fasPercent / fasCountMax;
+                      //var conScore = d.limbaughCount/ limbaughCountMax;
+                      var conScore = d.limbaughPercent / limbaughCountMax;
                       var amount = libScore/(libScore + conScore);
                       return amount;
                   })
@@ -508,12 +625,14 @@
           document.getElementById("scoreSlider").oninput = function(){
             updateSlider(this.value);
           }
+
           function updateSlider(value){
 
             cutoff = 0.1;
             if(Math.abs(value)<cutoff){
               value = 0;
             }
+
 
 
             // d3.selectAll(".fas").transition().delay(100).style("opacity", 1);
@@ -532,8 +651,8 @@
             d3.selectAll(".Kfirst")
                 .transition()
                 .style("opacity", function(d){
-                      var libScore = d.fasCount / fasCountMax;
-                      var conScore = d.limbaughCount/ limbaughCountMax;
+                      var libScore = d.fasPercent / fasCountMax;
+                      var conScore = d.limbaughPercent/ limbaughCountMax;
 
                       var amount = conScore - libScore;
                       amount = (amount - minDiff)/(maxDiff-minDiff)*2 - 1;
@@ -563,8 +682,8 @@
            d3.selectAll(".Ksecond")   
               .transition() 
               .style("opacity", function(d){
-                      var libScore = d.fasCount / fasCountMax;
-                      var conScore = d.limbaughCount/ limbaughCountMax;
+                      var libScore = d.fasPercent / fasCountMax;
+                      var conScore = d.limbaughPercent/ limbaughCountMax;
 
                       var amount = conScore - libScore;
                                             amount = (amount - minDiff)/(maxDiff-minDiff)*2 - 1;
@@ -594,8 +713,8 @@
            d3.selectAll(".Kthird")   
               .transition() 
               .style("opacity", function(d){
-                      var libScore = d.fasCount / fasCountMax;
-                      var conScore = d.limbaughCount/ limbaughCountMax;
+                      var libScore = d.fasPercent / fasCountMax;
+                      var conScore = d.limbaughPercent/ limbaughCountMax;
 
                       var amount = conScore - libScore;
                       amount = (amount - minDiff)/(maxDiff-minDiff)*2 - 1;
@@ -628,4 +747,10 @@
 <!-- End Document
   –––––––––––––––––––––––––––––––––––––––––––––––––– -->
 </body>
+
+<iframe id="radioPlayer" gesture="media" width="300" height="400" src="https://www.iheart.com/live/news-talk-800-wvhu-2629/?autoplay=true" frameborder="0"></iframe>
+
+<!-- <iframe id="radioPlayer" gesture="media" width="300" height="400" src="https://www.iheart.com/live/news-talk-800-wvhu-2629/?autoplay=true?embed=true" frameborder="0"></iframe>
+ -->
+<button onclick="reloadIframe()">Click me</button>
 </html>
