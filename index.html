@@ -67,7 +67,7 @@
     <div class="row" align="center">
       <input type="range" align="center" min="-1" max="1" value="0.0" step="0.01" class="slider" id="scoreSlider">
     </div>
-        <script src="dataMarket_test.js"></script>
+        <script src="dataMarket_rd.js"></script>
         <script type="text/javascript">
 
           // -------------------------------------------- Setup
@@ -732,7 +732,8 @@
                       if(value < 0){
                         if(amount<value){
                           return 0.8;
-                        }else{
+                        }else{
+
                           return 0.0;
                         }                        
                       }
@@ -748,9 +749,10 @@
   –––––––––––––––––––––––––––––––––––––––––––––––––– -->
 </body>
 
-<iframe id="radioPlayer" gesture="media" width="300" height="400" src="https://www.iheart.com/live/news-talk-800-wvhu-2629/?autoplay=true" frameborder="0"></iframe>
-
+<div align="center">
+    <iframe id="radioPlayer" gesture="media" width="800" height="400" src="https://www.iheart.com/live/news-talk-800-wvhu-2629/?autoplay=true" frameborder="0"></iframe>
+</div>
 <!-- <iframe id="radioPlayer" gesture="media" width="300" height="400" src="https://www.iheart.com/live/news-talk-800-wvhu-2629/?autoplay=true?embed=true" frameborder="0"></iframe>
  -->
-<button onclick="reloadIframe()">Click me</button>
+<!-- <button onclick="reloadIframe()">Click me</button> -->
 </html>
