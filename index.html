@@ -106,6 +106,67 @@
           var marketInfo = JSON.parse(market);
           console.dir(marketInfo);
 
+
+          function calculateScore(marketObject){
+            var libScore = marketObject.fasPercent / fasCountMax;
+            var conScore = marketObject.limbaughPercent/ limbaughCountMax;
+            if(libScore == 0 && conScore ==0){
+              return -1;
+            }
+            var amount = libScore / (libScore + conScore);
+            //var amount = conScore - libScore;
+            //amount = (amount - minDiff)/(maxDiff-minDiff)*2 - 1;
+            //console.log('market: ' + marketObject.name + ' score: ' + amount);
+            return amount;
+          }
+
+          function calculateInside(marketObject){
+
+            var libScore = marketObject.fasPercent / fasCountMax;
+            var conScore = marketObject.limbaughPercent/ limbaughCountMax;
+
+            var amount = conScore - libScore;
+            amount = (amount - minDiff)/(maxDiff-minDiff)*2 - 1;
+            amount = calculateScore(marketObject);
+            amount = amount*2 - 1;
+            amount = -amount;
+            //var amount = libScore/(libScore + conScore);
+            //console.log("amount: " + amount);
+
+            value = document.getElementById("scoreSlider").value;
+            if(Math.abs(value)<0.1){
+                value = 0;
+            }
+
+            if(value>0){
+              if(amount>=value){
+                inside = true;
+              }else{
+                inside = false;
+              }
+            }
+
+            if(value < 0){
+              if(amount<=value){
+                inside = true;
+              }else{
+                inside=false;
+              }                        
+            }
+
+            if(value == 0){
+              inside=true;
+            }
+            /*
+            if(marketObject.name=='DAYTON'){
+
+                console.log('market: ' + marketObject.name + ' value: ' + value + ' score: ' + amount + ' inside: ' + inside); 
+            }
+            */
+            return inside;
+          }
+
+
           //calculate aggregate stuff!
           fasCountMax = 0;
           limbaughCountMax = 0;
@@ -138,50 +199,19 @@
                   available=[];
                   for(i= 0; i<marketInfo.length; i++){
                     //make list of available
-                    inside = false;
-                    var libScore = marketInfo[i].fasPercent / fasCountMax;
-                    var conScore = marketInfo[i].limbaughPercent/ limbaughCountMax;
-
-                    var amount = conScore - libScore;
-                    amount = (amount - minDiff)/(maxDiff-minDiff)*2 - 1;
-                    //var amount = libScore/(libScore + conScore);
-                    //console.log("amount: " + amount);
-
-                    value = document.getElementById("scoreSlider").value;
-                    if(Math.abs(value)<0.1){
-                        value = 0;
-                    }
-
-                    if(value>0){
-                      if(amount>value){
-                        inside = true;
-                      }else{
-                        inside = false;
-                      }
-                    }
-
-                    if(value < 0){
-                      if(amount<value){
-                        inside = true;
-                      }else{
-                        inside=false;
-                      }                        
-                    }
-
-                    if(value == 0){
-                      inside=true;
-                    }
+                    inside = calculateInside(marketInfo[i]);
                     if(inside){
-                      //console.log('INSIDE');
-                      //console.dir(marketInfo[i]);
                       for(j=0; j<marketInfo[i].conservative_live_link.length; j++){
-                          available.push(marketInfo[i].conservative_live_link[j]);  
+                          if((marketInfo[i].conservative_live_link[j].length)>0){
+                              available.push(marketInfo[i].conservative_live_link[j]);                              
+                          }
                       }
                       for(j=0; j<marketInfo[i].liberal_live_link.length; j++){
+                        if((marketInfo[i].liberal_live_link[j].length)>0){
                           available.push(marketInfo[i].liberal_live_link[j]);  
+                        }
                       }
                     }
-
                   }
 
                   //select one of the available ones:
@@ -201,12 +231,7 @@
                   }else{
                       console.log('could not find radio link!');
                   }
-
-
-
-
               }    
-              
           }
 
 
@@ -452,7 +477,11 @@
                 market.append("circle")
                   .attr("r", function(d){
                     //console.log("adding limbaugh market: " + d.limbaughCount);
-                    return 5*(d.limbaughCount + d.fasCount);
+                    console.log("adding market, population: " + d.population + " radius: " + d.population/50000);
+                    //console.log("adding market, population: ");
+                    //return 5;
+                    return d.population/200000;
+                    //return 5*(d.limbaughCount + d.fasCount);
                     //return 4;
                   })
                   .attr("class", "knob")
@@ -460,30 +489,17 @@
                   .style("stroke", "#000")
                   .style("stroke-width", 0)
                   .style("fill", function(d){
-                      //var libScore = d.fasCount / fasCountMax;
-                      var libScore = d.fasPercent / fasCountMax;
-                      //var conScore = d.limbaughCount/ limbaughCountMax;
-                      var conScore = d.limbaughPercent / limbaughCountMax;
-                      var amount = libScore/(libScore + conScore);
-                      //var amount = d.fasCount/(d.limbaughCount + d.fasCount);
-                      //console.log("amount = " + amount);
-                      //amount = 1;
-                    return lerpColor('#ff0000', '#0000ff', amount);
+                      amount = calculateScore(d);
+                      return lerpColor('#ff0000', '#0000ff', amount);  
                   })
                   .attr("score",function(d){
-                      //var libScore = d.fasCount / fasCountMax;
-                     // var conScore = d.limbaughCount/ limbaughCountMax;
-                      //var amount = libScore/(libScore + conScore);
-                      //var libScore = d.fasCount / fasCountMax;
-                      var libScore = d.fasPercent / fasCountMax;
-                      //var conScore = d.limbaughCount/ limbaughCountMax;
-                      var conScore = d.limbaughPercent / limbaughCountMax;
-                      var amount = libScore/(libScore + conScore);
+                      mount = calculateScore(d);
                       return amount;
                   })
                   .on("mouseover", function(d){ 
                       //d3.select(this).style("fill", "rgba(173, 140, 171, 1)"); 
-                      d3.select("#hovering").text(d.name);
+                      var description = d.name + ' \nliberal share: ' + Math.round((d.fasPercent*100)/100) + '%' + '\nconservative share: ' + Math.round((d.limbaughPercent*100)/100) + '%';
+                      d3.select("#hovering").text(description);
                       d3.select(this).style("stroke-width", 1);
                       d3.select("#playing").text(" ");
                   })              
@@ -651,94 +667,34 @@
             d3.selectAll(".Kfirst")
                 .transition()
                 .style("opacity", function(d){
-                      var libScore = d.fasPercent / fasCountMax;
-                      var conScore = d.limbaughPercent/ limbaughCountMax;
-
-                      var amount = conScore - libScore;
-                      amount = (amount - minDiff)/(maxDiff-minDiff)*2 - 1;
-
-                      //var amount = libScore/(libScore + conScore);
-                      //console.log("amount: " + amount);
-
-                      if(value>0){
-                        if(amount>value){
-                          return 0.8;
-                        }else{
-                          return 0.0;
-                        }
+                      var inside = calculateInside(d);
+                      if(inside){
+                        return 0.8;
+                      }else{
+                        return 0.0;
                       }
-
-                      if(value < 0){
-                        if(amount<value){
-                          return 0.8;
-                        }else{
-                          return 0.0;
-                        }                        
-                      }
-
-                      return 0.8;
                 })
 
            d3.selectAll(".Ksecond")   
               .transition() 
               .style("opacity", function(d){
-                      var libScore = d.fasPercent / fasCountMax;
-                      var conScore = d.limbaughPercent/ limbaughCountMax;
-
-                      var amount = conScore - libScore;
-                                            amount = (amount - minDiff)/(maxDiff-minDiff)*2 - 1;
-
-                      //var amount = libScore/(libScore + conScore);
-                      //console.log("amount: " + amount);
-
-                      if(value>0){
-                        if(amount>value){
-                          return 0.8;
-                        }else{
-                          return 0.0;
-                        }
+                      var inside = calculateInside(d);
+                      if(inside){
+                        return 0.8;
+                      }else{
+                        return 0.0;
                       }
-
-                      if(value < 0){
-                        if(amount<value){
-                          return 0.8;
-                        }else{
-                          return 0.0;
-                        }                        
-                      }
-
-                      return 0.8;
                 })
 
            d3.selectAll(".Kthird")   
               .transition() 
               .style("opacity", function(d){
-                      var libScore = d.fasPercent / fasCountMax;
-                      var conScore = d.limbaughPercent/ limbaughCountMax;
-
-                      var amount = conScore - libScore;
-                      amount = (amount - minDiff)/(maxDiff-minDiff)*2 - 1;
-                      //var amount = libScore/(libScore + conScore);
-                      //console.log("amount: " + amount);
-
-                      if(value>0){
-                        if(amount>value){
-                          return 0.8;
-                        }else{
-                          return 0.0;
-                        }
+                      var inside = calculateInside(d);
+                      if(inside){
+                        return 0.8;
+                      }else{
+                        return 0.0;
                       }
-
-                      if(value < 0){
-                        if(amount<value){
-                          return 0.8;
-                        }else{
-
-                          return 0.0;
-                        }                        
-                      }
-
-                      return 0.8;
                 })  
           }
 
@@ -750,7 +706,7 @@
 </body>
 
 <div align="center">
-    <iframe id="radioPlayer" gesture="media" width="800" height="400" src="https://www.iheart.com/live/news-talk-800-wvhu-2629/?autoplay=true" frameborder="0"></iframe>
+    <iframe id="radioPlayer" gesture="media" width="800" height="800" src="https://www.iheart.com/live/news-talk-800-wvhu-2629/?autoplay=true" frameborder="0"></iframe>
 </div>
 <!-- <iframe id="radioPlayer" gesture="media" width="300" height="400" src="https://www.iheart.com/live/news-talk-800-wvhu-2629/?autoplay=true?embed=true" frameborder="0"></iframe>
  -->
