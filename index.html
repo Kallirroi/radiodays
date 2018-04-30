@@ -42,11 +42,6 @@
         <h1>Radio Days</h1>
       </div>
     </div>
-<!--     <div class="row">
-      <div class="one-half column">
-        <h5>What is America listening to?</h5>
-      </div>
-    </div>  -->  
     <div class="row">
       <div class="one-half column" style="margin-top: 5%">
         <p>Recent analysis has shown that there is more polarization in Internet-poor and older communities than there is among those who get their news online. One potential reason for this is talk radio. It is available everywhere in America and is listened to by most of the local population. </p> <p>In the map below, we are comparing the coverage between Rush Limbaugh and FAS radio shows. The choropleth shows Unemployment rates as of August, 2016, taken from the <a href="https://www.bls.gov/lau/#tables">Bureau of Labor Statistics.</a></p>
@@ -236,7 +231,7 @@
 
 
 
-          var svg = d3.select("body").append("svg")
+          var svg = d3.select(".container").append("svg")
               .attr("width", width)
               .attr("height", height);
 
@@ -701,14 +696,16 @@
         </script>
   </div>
 
+  <div id="cheating" align="center">
+      <iframe id="radioPlayer" gesture="media" width="800" height="800" src="https://www.iheart.com/live/news-talk-800-wvhu-2629/?autoplay=true" frameborder="0"></iframe>
+  </div>
+  <!-- <iframe id="radioPlayer" gesture="media" width="300" height="400" src="https://www.iheart.com/live/news-talk-800-wvhu-2629/?autoplay=true?embed=true" frameborder="0"></iframe>
+   -->
+  <!-- <button onclick="reloadIframe()">Click me</button> -->
+
 <!-- End Document
   –––––––––––––––––––––––––––––––––––––––––––––––––– -->
 </body>
 
-<div align="center">
-    <iframe id="radioPlayer" gesture="media" width="800" height="800" src="https://www.iheart.com/live/news-talk-800-wvhu-2629/?autoplay=true" frameborder="0"></iframe>
-</div>
-<!-- <iframe id="radioPlayer" gesture="media" width="300" height="400" src="https://www.iheart.com/live/news-talk-800-wvhu-2629/?autoplay=true?embed=true" frameborder="0"></iframe>
- -->
-<!-- <button onclick="reloadIframe()">Click me</button> -->
+
 </html>

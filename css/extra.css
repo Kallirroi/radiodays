@@ -42,6 +42,7 @@ g.station {
 	font-size: 1.4rem;
 	/*border: 1px solid;*/
 	text-align: center;
+	display: none;
 }
 
 #hovering, #playing {
@@ -57,4 +58,8 @@ g.station {
 	margin-right: 0.6vw;
 	position: relative;
 	display: inline-block;
+}
+
+#cheating {
+	opacity: 0;
 }
