@@ -45,6 +45,12 @@ g.station {
 	display: none;
 }
 
+.sliderLabel {
+	font-size: 1.5rem;
+	vertical-align: top;
+	padding: 0 0.5vw;
+}
+
 #hovering, #playing {
 	font-size: 1.4rem;
 	z-index: 1;
@@ -59,6 +65,7 @@ g.station {
 	position: relative;
 	display: inline-block;
 }
+
 
 #cheating {
 	opacity: 0;
