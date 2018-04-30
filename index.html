@@ -64,7 +64,7 @@
       <input type="range" align="center" min="-1" max="1" value="0.0" step="0.01" class="slider" id="scoreSlider">
       <span class="sliderLabel">Conservative</span>
     </div>
-        <script src="dataMarket_rd.js"></script>
+        <script src="data/dataMarket_rd.js"></script>
         <script type="text/javascript">
 
           // -------------------------------------------- Setup
@@ -90,6 +90,7 @@
             .domain([0, 40])
             .rangeRound([600, 780]);
 
+          var audioElement = document.createElement('audio');
 
           var radioScan = false;
             //handleRadioScan();
@@ -344,7 +345,7 @@
 
 
 
-            d3.json("dataRadio.json", function(error, dataRadio) {
+            d3.json("data/dataRadio.json", function(error, dataRadio) {
               function drawStations() {
                 // -------------------------------------------- Station
                 var station = svg.selectAll("g.station")
@@ -375,11 +376,11 @@
                       d3.select(this).style("stroke-width", 0);
                   })
                   .on("click", function(d) { 
-                    var audioElement = document.createElement('audio');
                     audioElement.setAttribute('src', d.live);
                     audioElement.play();
                     setTimeout(function() { audioElement.pause()}, 10000);
                     d3.select("#playing").text("Listening to: " + d.name);
+
                   });
 
                   d3.select(".modeLive").on("click", function(d) { 
@@ -399,12 +400,7 @@
               drawStations();
             });                   
 
-            d3.json("dataMarket_rd.json", function(error, dataMarket) {
-
-
-
-
-
+            d3.json("data/dataMarket_rd.json", function(error, dataMarket) {
 
               function drawMarkets() {
                 // -------------------------------------------- market
@@ -635,18 +631,15 @@
 
           }
 
-          document.getElementById("scoreSlider").oninput = function(){
+          document.getElementById("scoreSlider").oninput = function () {
             updateSlider(this.value);
           }
 
           function updateSlider(value){
-
             cutoff = 0.1;
             if(Math.abs(value)<cutoff){
               value = 0;
             }
-
-
 
             // d3.selectAll(".fas").transition().delay(100).style("opacity", 1);
             d3.selectAll(".station").transition().delay(100).style("opacity", 0);
@@ -658,8 +651,6 @@
             d3.selectAll(".Ffirst").transition().style("opacity", 0);
             d3.selectAll(".Fsecond").transition().style("opacity", 0);
             d3.selectAll(".Fthird").transition().style("opacity", 0);
-
-
 
             d3.selectAll(".Kfirst")
                 .transition()
@@ -692,14 +683,16 @@
                       }else{
                         return 0.0;
                       }
-                })  
+                })
+            var iframe = document.getElementById('radioPlayer')[0];
+            iframe.contentWindow.postMessage('{"method": "setVolume", "value":0}','*');
           }
 
         </script>
   </div>
 
   <div id="cheating" align="center">
-      <iframe id="radioPlayer" gesture="media" width="800" height="800" src="https://www.iheart.com/live/news-talk-800-wvhu-2629/?autoplay=true" frameborder="0"></iframe>
+    <iframe id="radioPlayer" gesture="media" width="800" height="800" src="https://www.iheart.com/live/news-talk-800-wvhu-2629/?autoplay=true" frameborder="0"></iframe>
   </div>
   <!-- <iframe id="radioPlayer" gesture="media" width="300" height="400" src="https://www.iheart.com/live/news-talk-800-wvhu-2629/?autoplay=true?embed=true" frameborder="0"></iframe>
    -->
