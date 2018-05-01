@@ -52,10 +52,12 @@ g.station {
 }
 
 #hovering, #playing {
-	font-size: 1.4rem;
+	font-size: 1.6rem;
+	font-weight: 500;
+	/*background-color: #67AACE;*/
 	z-index: 1;
-	float: right;
-	height: 1vh;
+	float: left;
+	height: 2.3vh;
 }
 
 .modeLive, .modeL, .modeFAS{
