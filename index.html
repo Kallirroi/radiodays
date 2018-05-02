@@ -33,6 +33,7 @@
 <script src="https://d3js.org/d3-geo.v1.min.js"></script>
 <script src="https://d3js.org/d3-geo-projection.v2.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script src="https://d3js.org/d3-timer.v1.min.js"></script>
 
   <!-- Primary Page Layout
   –––––––––––––––––––––––––––––––––––––––––––––––––– -->
@@ -42,14 +43,9 @@
         <h1>Radio Days</h1>
       </div>
     </div>
-<!--     <div class="row">
-      <div class="one-half column">
-        <h5>What is America listening to?</h5>
-      </div>
-    </div>  -->  
     <div class="row">
       <div class="one-half column" style="margin-top: 5%">
-        <p>Recent analysis has shown that there is more polarization in Internet-poor and older communities than there is among those who get their news online. One potential reason for this is talk radio. It is available everywhere in America and is listened to by most of the local population. </p> <p>In the map below, we are comparing the coverage between Rush Limbaugh and FAS radio shows. The choropleth shows Unemployment rates as of August, 2016, taken from the <a href="https://www.bls.gov/lau/#tables">Bureau of Labor Statistics.</a></p>
+        <p>Recent analysis has shown that there is more polarization in Internet-poor and older communities than there is among those who get their news online. One potential reason for this is talk radio. It is available everywhere in America and is listened to by most of the local population. </p> <p>In the map below, we are comparing the coverage between conservative (Rush Limbaugh and Glenn Beck) and liberal (FAS) radio shows. The choropleth shows total population as of August, 2016, taken from the <a href="https://www.bls.gov/lau/#tables">Bureau of Labor Statistics.</a></p>
       </div>
     </div>       
     <div class="row">
@@ -64,10 +60,12 @@
         <div id="playing"></div>
       </div>
     </div>
-    <div class="row" align="center">
+    <div class="row" align="center" style="margin-top: 1%">
+      <span class="sliderLabel">Liberal</span>
       <input type="range" align="center" min="-1" max="1" value="0.0" step="0.01" class="slider" id="scoreSlider">
+      <span class="sliderLabel">Conservative</span>
     </div>
-        <script src="dataMarket_rd.js"></script>
+        <script src="data/dataMarket_rd.js"></script>
         <script type="text/javascript">
 
           // -------------------------------------------- Setup
@@ -81,32 +79,38 @@
           var rateById = d3.map();
 
           var color = d3.scaleThreshold()
-              color.domain([0, 5, 10, 15, 20, 25, 30, 35, 40])
-              .range(d3.schemePuBuGn[9]);
+              color.domain([0, 100, 1000, 10000, 100000, 1000000,  10000000])
+              .range(d3.schemeYlGnBu[9]);
 
           var colorStations = "#000";
           var colorLimbaugh = "#D74C5F";
           var colorFAS = "#CF8F23";
+
           var Unemployment = d3.map();
+
+          var TotalPop = d3.map();
           var Broadband = d3.map();
           var Poverty = d3.map();
-          var x = d3.scaleLinear()
-            .domain([0, 40])
-            .rangeRound([600, 780]);
 
+          var x = d3.scaleLinear()
+            .domain([1000, 10000000])
+            .rangeRound([600, 780]);
+          var scaleRadius= d3.scaleLinear()
+            .domain([100,  10000000])
+            .range([2.5, 15]);
+          var scaleParticle= d3.scaleLinear()
+            .domain([1,  4095])
+            .range([-1, 1]);
 
           var radioScan = false;
             //handleRadioScan();
           document.getElementById("radioKnob").onclick=function(){
             radioScan=!radioScan;
-
           }
-
 
           //load json!
           var marketInfo = JSON.parse(market);
           console.dir(marketInfo);
-
 
           function calculateScore(marketObject){
             var libScore = marketObject.fasPercent / fasCountMax;
@@ -135,6 +139,7 @@
             //console.log("amount: " + amount);
 
             value = document.getElementById("scoreSlider").value;
+
             if(Math.abs(value)<0.1){
                 value = 0;
             }
@@ -235,9 +240,7 @@
               }    
           }
 
-
-
-          var svg = d3.select("body").append("svg")
+          var svg = d3.select(".container").append("svg")
               .attr("width", width)
               .attr("height", height);
 
@@ -259,8 +262,6 @@
             document.getElementById('radioPlayer').src = document.getElementById('radioPlayer').src;
           }
 
-
-
           // // -------------------------------------------- Legend
           var legend = svg.append("g")
             .attr("class", "key")
@@ -277,7 +278,8 @@
             .attr("height", 8)
             .attr("x", function(d) { return x(d[0]); })
             .attr("width", function(d) { return x(d[1]) - x(d[0]); })
-            .attr("fill", function(d) { return color(d[0]); });
+            .attr("fill", function(d) { return color(d[0]); })
+            .style("opacity", 0.5);
 
           legend.append("text")
             .attr("class", "caption")
@@ -286,13 +288,14 @@
             .attr("fill", "#000")
             .attr("text-anchor", "start")
             .attr("font-weight", "bold")
-            .text("Unemployment rate");
+            .text("Total Population");
             // .text("Poverty rate");
 
           legend.call(d3.axisBottom(x)
             .tickSize(13)
-            .tickFormat(function(x, i) { return i ? x : x + "%"; })
-            .tickValues(color.domain()))
+            .ticks(3)
+            // .tickFormat(function(x, i) { return i ? x : x ; })
+            .tickValues(x.domain()))
           .select(".domain")
             .remove();
 
@@ -302,14 +305,14 @@
               .defer(d3.csv, "unemployment_broadband.csv", row)
               .await(ready);
 
-        // interplate data
+          // interplate data from unemployment.csv
           function row(d) {
 
             Unemployment.set(d.CensusId, +d.Unemployment);
+            TotalPop.set(d.CensusId, +d.TotalPop);
             Broadband.set(d.CensusId, +d.percent_total_population*100);
-            Poverty.set(d.CensusId, +d.Poverty);
-            d.Unemployment = +d.Unemployment
-            d.Poverty = +d.Poverty;
+            d.Unemployment = +d.Unemployment;
+            d.TotalPop = +d.TotalPop;
             d.broadband = +d.percent_total_population;
             return d;
           }
@@ -327,93 +330,28 @@
                 .selectAll("path")
                 .data(topojson.feature(us, us.objects.counties).features)
                 .enter().append("path")
+                  //.attr("fill", function(d,i) { return color(d.rate = TotalPop.get(d.id)); })
                   .attr("fill", function(d,i) { return color(d.rate = Broadband.get(d.id)); })
-                  //.attr("fill", function(d,i) { return color(d.rate = Unemployment.get(d.id)); })
-                  // .attr("fill", function(d,i) { return color(d.rate = Poverty.get(d.id)); })
+                  .attr("opacity", 0.5)
                   .attr("d", path)
                   .on("mouseover", function(){ 
                       d3.select(this).style("fill", "rgba(0,0,0,0.5)"); 
                   })
                   .on("mouseout", function(){ 
+                      //d3.select(this).style("fill", function(d) { return color(d.rate = TotalPop.get(d.id)); })
                       d3.select(this).style("fill", function(d) { return color(d.rate = Broadband.get(d.id)); })
-                      //d3.select(this).style("fill", function(d) { return color(d.rate = Unemployment.get(d.id)); })
-                      // d3.select(this).style("fill", function(d) { return color(d.rate = Poverty.get(d.id)); })
                   })  
                 .append("title")
-                  .text(function(d) { return d.rate + "%"; });
+                  .text(function(d) { return d.rate; });
 
               svg.append("path")
                   .datum(topojson.mesh(us, us.objects.states, function(a, b) { return a !== b; }))
                   .attr("class", "states")
                   .attr("d", path);
             }
-            loadMap();
+            loadMap();                 
 
-
-
-
-
-            d3.json("dataRadio.json", function(error, dataRadio) {
-              function drawStations() {
-                // -------------------------------------------- Station
-                var station = svg.selectAll("g.station")
-                  .data(dataRadio)
-                  .enter()
-                  .append("g")
-                  .attr("class", "station")
-                  .attr("transform", function(d) { 
-                    if (d.long!==-1 && d.lat!==-1) {
-                      return "translate(" + projection([d.long, d.lat]) + ")"; }
-                  });
-
-
-                station.append("circle")
-                  .attr("r", 4)
-                  .style("fill", colorStations)
-                  .style("stroke", "#000")
-                  .style("stroke-width", 0)
-                  .style("opacity", 0.7)
-                  .on("mouseover", function(d){ 
-                      d3.select(this).style("opacity", 1); 
-                      d3.select("#hovering").text(d.name);
-                      d3.select(this).style("stroke-width", 1);
-                  })              
-                  .on("mouseout", function(d){ 
-                      d3.select(this).style("opacity", 0.45); 
-                      d3.select("#hovering").text("");
-                      d3.select(this).style("stroke-width", 0);
-                  })
-                  .on("click", function(d) { 
-                    var audioElement = document.createElement('audio');
-                    audioElement.setAttribute('src', d.live);
-                    audioElement.play();
-                    setTimeout(function() { audioElement.pause()}, 10000);
-                    d3.select("#playing").text("Listening to: " + d.name);
-                  });
-
-                  d3.select(".modeLive").on("click", function(d) { 
-                    d3.selectAll(".station").transition().delay(100).style("opacity", 1);
-
-                    d3.selectAll(".Lfirst").transition().style("opacity", 0);
-                    d3.selectAll(".Lsecond").transition().style("opacity", 0);
-                    d3.selectAll(".Lthird").transition().style("opacity", 0);                      
-
-                    d3.selectAll(".Ffirst").transition().style("opacity", 0);
-                    d3.selectAll(".Fsecond").transition().style("opacity", 0);
-                    d3.selectAll(".Fthird").transition().style("opacity", 0);
-
-                  }) 
-
-              }
-              drawStations();
-            });                   
-
-            d3.json("dataMarket_rd.json", function(error, dataMarket) {
-
-
-
-
-
+            d3.json("data/dataMarket_rd.json", function(error, dataMarket) {
 
               function drawMarkets() {
                 // -------------------------------------------- market
@@ -427,82 +365,26 @@
                       return "translate(" + projection([d.long, d.lat]) + ")"; }
                   });
 
-                //Limbaugh   
                 market.append("circle")
                   .attr("r", function(d){
-                    //console.log("adding limbaugh market: " + d.limbaughCount);
-                    //return d.limbaughCount;
-                    return 4;
-                  })
-                  .attr("class", "limbaugh")
-                  .style("opacity", 0)
-                  .style("stroke", "#000")
-                  .style("stroke-width", 0)
-                  .style("fill", colorLimbaugh)
-                  .on("mouseover", function(d){ 
-                      d3.select(this).style("fill", "rgba(255, 255, 255, 1)"); 
-                      d3.select("#hovering").text(d.name);
-                      d3.select(this).style("stroke-width", 1);
-                      d3.select("#playing").text(" ");
-                  })              
-                  .on("mouseout", function(d){ 
-                      d3.select(this).style("fill", "rgba(255, 255, 255, 0.7)"); 
-                      d3.select("#hovering").text(" ");
-                      d3.select(this).style("stroke-width", 0);
-                      d3.select("#playing").text(" ");
-                  })
-
-                //FAS
-                market.append("circle")
-                  .attr("r", function(d){
-                    //console.log("adding limbaugh market: " + d.limbaughCount);
-                    //return d.fasCount;
-                    return 4;
-                  })
-                  .attr("class", "fas")
-                  .style("opacity", 0)
-                  .style("stroke", "#000")
-                  .style("stroke-width", 0)
-                  .style("fill", colorFAS)
-                  .on("mouseover", function(d){ 
-                      d3.select(this).style("fill", "rgba(173, 140, 171, 1)"); 
-                      d3.select("#hovering").text(d.name);
-                      d3.select(this).style("stroke-width", 1);
-                      d3.select("#playing").text(" ");
-                  })              
-                  .on("mouseout", function(d){ 
-                      d3.select(this).style("fill", "rgba(173, 140, 171, 0.8)"); 
-                      d3.select("#hovering").text(" ");
-                      d3.select(this).style("stroke-width", 0);
-                      d3.select("#playing").text(" ");
-                  })
-
-                
-
-                //Knob
-                market.append("circle")
-                  .attr("r", function(d){
-                    //console.log("adding limbaugh market: " + d.limbaughCount);
-                    console.log("adding market, population: " + d.population + " radius: " + d.population/50000);
-                    //console.log("adding market, population: ");
-                    //return 5;
-                    return 5;
-                    return d.population/200000;
-                    //return 5*(d.limbaughCount + d.fasCount);
-                    //return 4;
+                    // return d.population/600000;
+                    return  scaleRadius(d.population); 
                   })
                   .attr("class", "knob")
-                  .style("fill-opacity", function(d){
-                    //return 0.5;
-                    console.log('name: ' + d.name + ' opacity: ' + d.population/20000000)
-                    //return 0.5;
-                    return d.population/1000000;
-                  })
-                  .style("stroke", "#000")
-                  .style("stroke-width", 1)
+                  .style("opacity", 0.8)
+                  // .style("stroke-dasharray", function(d){
+                  //     amount = calculateScore(d);
+                  //     if (amount > 0.5) {
+                  //       return 3;
+                  //     }
+                  //     else {
+                  //       return 0;
+                  //     }
+                  // })
+                  .style("stroke-width", 1.5)
                   .style("fill", function(d){
                       amount = calculateScore(d);
-                      return lerpColor('#ff0000', '#0000ff', amount);  
+                      return lerpColor('#a02ea0', '#1e2db2', amount);  
                   })
                   .attr("score",function(d){
                       mount = calculateScore(d);
@@ -510,7 +392,11 @@
                   })
                   .on("mouseover", function(d){ 
                       //d3.select(this).style("fill", "rgba(173, 140, 171, 1)"); 
-                      var description = d.name + ' \nliberal share: ' + Math.round((d.fasPercent*100)/100) + '%' + '\nconservative share: ' + Math.round((d.limbaughPercent*100)/100) + '%';
+                      var talkTotal = d.fasPercent + d.limbaughPercent;
+                      var liberalPercent = d.fasPercent / talkTotal;
+                      var conservativePercent = d.limbaughPercent / talkTotal;
+                      console.log(liberalPercent, conservativePercent);
+                      var description = d.name + ' \n Liberal share: ' + Math.round(liberalPercent*100) + '%' + ' \n Conservative share: ' + Math.round(conservativePercent*100) + '%';
                       d3.select("#hovering").text(description);
                       d3.select(this).style("stroke-width", 1);
                       d3.select("#playing").text(" ");
@@ -522,29 +408,6 @@
                       d3.select("#playing").text(" ");
                   })
 
-
-
-                  d3.selectAll('.limbaugh')
-                      .filter(function(d) { return d.number < 50 })
-                        .attr("class", "Lfirst");
-                  d3.selectAll('.limbaugh')
-                      .filter(function(d) { return d.number > 50 && d.number < 100 })
-                        .attr("class", "Lsecond");
-                  d3.selectAll('.limbaugh')
-                      .filter(function(d) { return d.number > 100 && d.number < 200 })
-                        .attr("class", "Lthird");
-
-
-                  d3.selectAll('.fas')
-                      .filter(function(d) { return d.number < 50 })
-                        .attr("class", "Ffirst");
-                  d3.selectAll('.fas')
-                      .filter(function(d) { return d.number > 50 && d.number < 100 })
-                        .attr("class", "Fsecond");
-                  d3.selectAll('.fas')
-                      .filter(function(d) { return d.number > 100 && d.number < 200 })
-                        .attr("class", "Fthird");
-
                   d3.selectAll('.knob')
                       .filter(function(d) { return d.number < 50 })
                         .attr("class", "Kfirst");
@@ -554,95 +417,6 @@
                   d3.selectAll('.knob')
                       .filter(function(d) { return d.number > 100 && d.number < 200 })
                         .attr("class", "Kthird");
-
-
-                  // show L
-                  d3.select(".modeL").on("click", function(d) { 
-                    // d3.selectAll(".fas").transition().style("opacity", 0);
-                    d3.selectAll(".station").transition().delay(100).style("opacity", 0);
-
-                    d3.selectAll(".Lfirst")
-                        .transition()
-                        .delay(500)
-                        .style("opacity", 1)
-
-                     d3.selectAll(".Lsecond")   
-                        .transition() 
-                        .delay(1000)
-                        .style("opacity", 1)
-
-                     d3.selectAll(".Lthird")   
-                        .transition() 
-                        .delay(1500)
-                        .style("opacity", 1)
-
-                    
-                    d3.selectAll(".Ffirst").transition().style("opacity", 0);
-                    d3.selectAll(".Fsecond").transition().style("opacity", 0);
-                    d3.selectAll(".Fthird").transition().style("opacity", 0);
-
-                    d3.selectAll(".Kfirst").transition().style("opacity", 0);
-                    d3.selectAll(".Ksecond").transition().style("opacity", 0);
-                    d3.selectAll(".Kthird").transition().style("opacity", 0);
-
-                  })              
-                  // show FAS
-                  d3.select(".modeFAS").on("click", function(d) { 
-                    // d3.selectAll(".fas").transition().delay(100).style("opacity", 1);
-                    d3.selectAll(".station").transition().delay(100).style("opacity", 0);
-
-                    d3.selectAll(".Lfirst").transition().style("opacity", 0);
-                    d3.selectAll(".Lsecond").transition().style("opacity", 0);
-                    d3.selectAll(".Lthird").transition().style("opacity", 0);
-
-                    d3.selectAll(".Kfirst").transition().style("opacity", 0);
-                    d3.selectAll(".Ksecond").transition().style("opacity", 0);
-                    d3.selectAll(".Kthird").transition().style("opacity", 0);
-
-                    d3.selectAll(".Ffirst")
-                        .transition()
-                        .delay(500)
-                        .style("opacity", 1)
-
-                   d3.selectAll(".Fsecond")   
-                      .transition() 
-                      .delay(1000)
-                      .style("opacity", 1)
-
-                   d3.selectAll(".Fthird")   
-                      .transition() 
-                      .delay(1500)
-                      .style("opacity", 1)
-                  })
-
-                  //show knob:
-                  d3.select(".modeKnob").on("click", function(d) { 
-                    // d3.selectAll(".fas").transition().delay(100).style("opacity", 1);
-                    d3.selectAll(".station").transition().delay(100).style("opacity", 0);
-
-                    d3.selectAll(".Lfirst").transition().style("opacity", 0);
-                    d3.selectAll(".Lsecond").transition().style("opacity", 0);
-                    d3.selectAll(".Lthird").transition().style("opacity", 0);
-
-                    d3.selectAll(".Ffirst").transition().style("opacity", 0);
-                    d3.selectAll(".Fsecond").transition().style("opacity", 0);
-                    d3.selectAll(".Fthird").transition().style("opacity", 0);
-
-                    d3.selectAll(".Kfirst")
-                        .transition()
-                        .delay(500)
-                        //.style("opacity", .8)
-
-                   d3.selectAll(".Ksecond")   
-                      .transition() 
-                      .delay(1000)
-                      //.style("opacity", .8)
-
-                   d3.selectAll(".Kthird")   
-                      .transition() 
-                      .delay(1500)
-                      //.style("opacity", .8)
-                  })                  
               }
               drawMarkets();
             });               
@@ -650,31 +424,25 @@
 
           }
 
-          document.getElementById("scoreSlider").oninput = function(){
+
+          d3.interval( function(){ 
+            d3.json('https://api.particle.io/v1/devices/270021001247363333343437/reading?access_token=6f49a6afc9c2209535c1bd59d9153cc4d3ab49b1', function(error, particleData){
+              var sliderValue = scaleParticle(particleData.result).toFixed(2);
+              document.getElementById("scoreSlider").value = sliderValue;
+              updateSlider(sliderValue);
+            });     
+          }, 500);
+         
+          document.getElementById("scoreSlider").oninput = function () {
             updateSlider(this.value);
           }
-
+ 
           function updateSlider(value){
-
             cutoff = 0.1;
             if(Math.abs(value)<cutoff){
               value = 0;
             }
-
-
-
-            // d3.selectAll(".fas").transition().delay(100).style("opacity", 1);
             d3.selectAll(".station").transition().delay(100).style("opacity", 0);
-
-            d3.selectAll(".Lfirst").transition().style("opacity", 0);
-            d3.selectAll(".Lsecond").transition().style("opacity", 0);
-            d3.selectAll(".Lthird").transition().style("opacity", 0);
-
-            d3.selectAll(".Ffirst").transition().style("opacity", 0);
-            d3.selectAll(".Fsecond").transition().style("opacity", 0);
-            d3.selectAll(".Fthird").transition().style("opacity", 0);
-
-
 
             d3.selectAll(".Kfirst")
                 .transition()
@@ -697,7 +465,6 @@
                         return 0.0;
                       }
                 })
-
            d3.selectAll(".Kthird")   
               .transition() 
               .style("opacity", function(d){
@@ -707,20 +474,22 @@
                       }else{
                         return 0.0;
                       }
-                })  
+                })
           }
 
         </script>
   </div>
 
+  <div id="cheating" align="center">
+    <iframe id="radioPlayer" gesture="media" width="800" height="800" src="https://www.iheart.com/live/news-talk-800-wvhu-2629/?autoplay=true" frameborder="0"></iframe>
+  </div>
+  <!-- <iframe id="radioPlayer" gesture="media" width="300" height="400" src="https://www.iheart.com/live/news-talk-800-wvhu-2629/?autoplay=true?embed=true" frameborder="0"></iframe>
+   -->
+  <!-- <button onclick="reloadIframe()">Click me</button> -->
+
 <!-- End Document
   –––––––––––––––––––––––––––––––––––––––––––––––––– -->
 </body>
 
-<div align="center">
-    <iframe id="radioPlayer" gesture="media" width="800" height="800" src="https://www.iheart.com/live/news-talk-800-wvhu-2629/?autoplay=true" frameborder="0"></iframe>
-</div>
-<!-- <iframe id="radioPlayer" gesture="media" width="300" height="400" src="https://www.iheart.com/live/news-talk-800-wvhu-2629/?autoplay=true?embed=true" frameborder="0"></iframe>
- -->
-<!-- <button onclick="reloadIframe()">Click me</button> -->
+
 </html>

@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset='utf-8'/>
+  <meta name='robots' content='noindex, nofollow' />
+  <meta http-equiv='X-UA-Compatible' content='IE=edge' />
+  <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+  <title>BB Adoption Counties</title>
+  <link rel='shortcut icon' href='/v4/embed/favicon.ico' type='image/x-icon' />
+  <meta name='twitter:site' content='@mapbox'>
+  <meta property='og:site_name' content='Mapbox' />
+  <meta name='twitter:url' content='http://a.tiles.mapbox.com/v4/governing.dcygmn29/page.html?access_token=pk.eyJ1IjoiZGFuc3dpY2siLCJhIjoiY2l1dTUzcmgxMDJ0djJ0b2VhY2sxNXBiMyJ9.25Qs4HNEkHubd4_Awbd8Og' />
+  <meta property='og:url' content='http://a.tiles.mapbox.com/v4/governing.dcygmn29/page.html?access_token=pk.eyJ1IjoiZGFuc3dpY2siLCJhIjoiY2l1dTUzcmgxMDJ0djJ0b2VhY2sxNXBiMyJ9.25Qs4HNEkHubd4_Awbd8Og'>
+  <meta name='twitter:title' content='BB Adoption Counties' />
+  <meta property='og:title' content='BB Adoption Counties' />
+  <meta name='twitter:description' content='' />
+  <meta property='og:description' content='' />
+  <meta name='twitter:image' content='http://a.tiles.mapbox.com/v4/governing.dcygmn29/0,0,2/435x375.png?access_token=pk.eyJ1IjoiZGFuc3dpY2siLCJhIjoiY2l1dTUzcmgxMDJ0djJ0b2VhY2sxNXBiMyJ9.25Qs4HNEkHubd4_Awbd8Og' />
+  <meta property='og:image' content='http://a.tiles.mapbox.com/v4/governing.dcygmn29/0,0,2/435x375.png?access_token=pk.eyJ1IjoiZGFuc3dpY2siLCJhIjoiY2l1dTUzcmgxMDJ0djJ0b2VhY2sxNXBiMyJ9.25Qs4HNEkHubd4_Awbd8Og' />
+  <meta name='twitter:image:width' content='435'>
+  <meta name='twitter:image:height' content='375'>
+  <meta property='og:image:width' content='435'>
+  <meta property='og:image:height' content='375'>
+  <meta name='twitter:card' content='summary_large_image'>
+  <meta property='og:type' content='website' />
+  <base target='_parent' />
+  <script type='text/javascript'>
+  window.tilejson = {
+  "bounds": [
+    -58.0078,
+    -13.5819,
+    20.2148,
+    40.0444
+  ],
+  "center": [
+    0,
+    0,
+    2
+  ],
+  "created": 1414609893253,
+  "description": "",
+  "filesize": 3291136,
+  "format": "png",
+  "grids": [
+    "https:\/\/a.tiles.mapbox.com\/v4\/governing.dcygmn29\/{z}\/{x}\/{y}.grid.json?access_token=pk.eyJ1IjoiZGFuc3dpY2siLCJhIjoiY2l1dTUzcmgxMDJ0djJ0b2VhY2sxNXBiMyJ9.25Qs4HNEkHubd4_Awbd8Og",
+    "https:\/\/b.tiles.mapbox.com\/v4\/governing.dcygmn29\/{z}\/{x}\/{y}.grid.json?access_token=pk.eyJ1IjoiZGFuc3dpY2siLCJhIjoiY2l1dTUzcmgxMDJ0djJ0b2VhY2sxNXBiMyJ9.25Qs4HNEkHubd4_Awbd8Og"
+  ],
+  "id": "governing.dcygmn29",
+  "legend": "",
+  "mapbox_logo": false,
+  "maxzoom": 6,
+  "minzoom": 0,
+  "name": "BB Adoption Counties",
+  "private": false,
+  "scheme": "xyz",
+  "template": "{{#__location__}}{{\/__location__}}{{#__teaser__}}<b><div class=\"winheader\">{{{web_county_input_data_from_fcc_countyname}}}<\/div><\/b>\n<div class=\"bodytext\">\n<b>{{{web_county_input_data_from_fcc_bb_text}}} fixed residential connections per 1,000 households<\/b><br>\n<b>{{{web_county_input_data_from_fcc_providers_text}}} providers<\/b><br>\n<div class=\"caption\">\n<i>Figures are for households and providers with fixed connections of at least 3 Mbps downstream and 768 kbps upstream.<\/i><br>\n<i>Data current as of Dec. 31, 2013<\/i>\n<\/div>\n<\/div>\n<\/div>\n<style type=\"text\/css\">\n.map-tooltip\n{\n  width:370px !important;\n  max-width:370px !important;\n  margin: 0px;\n  padding: 5px;\n  background-color: #fff;\n  opacity:1.0;\n  box-shadow: 0 0px 0px rgba(0, 0, 0, 0.15) !important;\n}\n<\/style>\n<style type=\"text\/css\">\n.winheader\n{\nfont-family: Georgia;\nfont-size: 14px;\ncolor: #9F0010;\n}\n.bodytext\n{\nfont-size: 12px;\ncolor: #525252;\n}\n.caption\n{\nmargin-top:5px;\nfont-size: 11px;\ncolor: #525252;\nline-height: 1.0 !important;\nfont-style: italic !important;\n}\n<\/style>{{\/__teaser__}}{{#__full__}}<b><div class=\"winheader\">{{{web_county_input_data_from_fcc_countyname}}}<\/div><\/b>\n<div class=\"bodytext\">\n<b>{{{web_county_input_data_from_fcc_bb_text}}} fixed residential connections per 1,000 households<\/b><br>\n<b>{{{web_county_input_data_from_fcc_providers_text}}} providers<\/b><br>\n<div class=\"caption\">\n<i>Figures are for households and providers with fixed connections of at least 3 Mbps downstream and 768 kbps upstream.<\/i><br>\n<i>Data current as of Dec. 31, 2013<\/i>\n<\/div>\n<\/div>\n<\/div>\n<style type=\"text\/css\">\n.map-tooltip\n{\n  width:370px !important;\n  max-width:370px !important;\n  margin: 0px;\n  padding: 5px;\n  background-color: #fff;\n  opacity:1.0;\n  box-shadow: 0 0px 0px rgba(0, 0, 0, 0.15) !important;\n}\n<\/style>\n<style type=\"text\/css\">\n.winheader\n{\nfont-family: Georgia;\nfont-size: 14px;\ncolor: #9F0010;\n}\n.bodytext\n{\nfont-size: 12px;\ncolor: #525252;\n}\n.caption\n{\nmargin-top:5px;\nfont-size: 11px;\ncolor: #525252;\nline-height: 1.0 !important;\nfont-style: italic !important;\n}\n<\/style>{{\/__full__}}",
+  "tilejson": "2.2.0",
+  "tiles": [
+    "https:\/\/a.tiles.mapbox.com\/v4\/governing.dcygmn29\/{z}\/{x}\/{y}.png?access_token=pk.eyJ1IjoiZGFuc3dpY2siLCJhIjoiY2l1dTUzcmgxMDJ0djJ0b2VhY2sxNXBiMyJ9.25Qs4HNEkHubd4_Awbd8Og",
+    "https:\/\/b.tiles.mapbox.com\/v4\/governing.dcygmn29\/{z}\/{x}\/{y}.png?access_token=pk.eyJ1IjoiZGFuc3dpY2siLCJhIjoiY2l1dTUzcmgxMDJ0djJ0b2VhY2sxNXBiMyJ9.25Qs4HNEkHubd4_Awbd8Og"
+  ],
+  "version": "1.0.0",
+  "webpage": "https:\/\/a.tiles.mapbox.com\/v4\/governing.dcygmn29\/page.html?access_token=pk.eyJ1IjoiZGFuc3dpY2siLCJhIjoiY2l1dTUzcmgxMDJ0djJ0b2VhY2sxNXBiMyJ9.25Qs4HNEkHubd4_Awbd8Og",
+  "options": [
+    "geocoder",
+    "share",
+    "zoompan",
+    "zoomwheel"
+  ]
+};
+  </script>
+</head>
+<body>
+<script src='/v4/embed/embed.js'></script>
+</body>
+</html>
