@@ -88,6 +88,7 @@
           var colorLimbaugh = "#D74C5F";
           var colorFAS = "#CF8F23";
           var Unemployment = d3.map();
+          var Broadband = d3.map();
           var Poverty = d3.map();
           var x = d3.scaleLinear()
             .domain([0, 40])
@@ -298,15 +299,18 @@
 
           d3.queue()
               .defer(d3.json, "us-counties.json")
-              .defer(d3.csv, "unemployment.csv", row)
+              .defer(d3.csv, "unemployment_broadband.csv", row)
               .await(ready);
 
         // interplate data
           function row(d) {
+
             Unemployment.set(d.CensusId, +d.Unemployment);
+            Broadband.set(d.CensusId, +d.percent_total_population*100);
             Poverty.set(d.CensusId, +d.Poverty);
             d.Unemployment = +d.Unemployment
             d.Poverty = +d.Poverty;
+            d.broadband = +d.percent_total_population;
             return d;
           }
           function ready(error, us) {
@@ -323,14 +327,16 @@
                 .selectAll("path")
                 .data(topojson.feature(us, us.objects.counties).features)
                 .enter().append("path")
-                  .attr("fill", function(d,i) { return color(d.rate = Unemployment.get(d.id)); })
+                  .attr("fill", function(d,i) { return color(d.rate = Broadband.get(d.id)); })
+                  //.attr("fill", function(d,i) { return color(d.rate = Unemployment.get(d.id)); })
                   // .attr("fill", function(d,i) { return color(d.rate = Poverty.get(d.id)); })
                   .attr("d", path)
                   .on("mouseover", function(){ 
                       d3.select(this).style("fill", "rgba(0,0,0,0.5)"); 
                   })
                   .on("mouseout", function(){ 
-                      d3.select(this).style("fill", function(d) { return color(d.rate = Unemployment.get(d.id)); })
+                      d3.select(this).style("fill", function(d) { return color(d.rate = Broadband.get(d.id)); })
+                      //d3.select(this).style("fill", function(d) { return color(d.rate = Unemployment.get(d.id)); })
                       // d3.select(this).style("fill", function(d) { return color(d.rate = Poverty.get(d.id)); })
                   })  
                 .append("title")
@@ -480,14 +486,20 @@
                     console.log("adding market, population: " + d.population + " radius: " + d.population/50000);
                     //console.log("adding market, population: ");
                     //return 5;
+                    return 5;
                     return d.population/200000;
                     //return 5*(d.limbaughCount + d.fasCount);
                     //return 4;
                   })
                   .attr("class", "knob")
-                  .style("opacity", 0)
+                  .style("fill-opacity", function(d){
+                    //return 0.5;
+                    console.log('name: ' + d.name + ' opacity: ' + d.population/20000000)
+                    //return 0.5;
+                    return d.population/1000000;
+                  })
                   .style("stroke", "#000")
-                  .style("stroke-width", 0)
+                  .style("stroke-width", 1)
                   .style("fill", function(d){
                       amount = calculateScore(d);
                       return lerpColor('#ff0000', '#0000ff', amount);  
@@ -619,17 +631,17 @@
                     d3.selectAll(".Kfirst")
                         .transition()
                         .delay(500)
-                        .style("opacity", .8)
+                        //.style("opacity", .8)
 
                    d3.selectAll(".Ksecond")   
                       .transition() 
                       .delay(1000)
-                      .style("opacity", .8)
+                      //.style("opacity", .8)
 
                    d3.selectAll(".Kthird")   
                       .transition() 
                       .delay(1500)
-                      .style("opacity", .8)
+                      //.style("opacity", .8)
                   })                  
               }
               drawMarkets();
