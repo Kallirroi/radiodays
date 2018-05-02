@@ -45,7 +45,7 @@
     </div>
     <div class="row">
       <div class="one-half column" style="margin-top: 5%">
-        <p>Recent analysis has shown that there is more polarization in Internet-poor and older communities than there is among those who get their news online. One potential reason for this is talk radio. It is available everywhere in America and is listened to by most of the local population. </p> <p>In the map below, we are comparing the coverage between conservative (Rush Limbaugh and Glenn Beck) and liberal (FAS) radio shows. The choropleth shows total access to broadband as of December 2016, reported by the <a href="https://www.fcc.gov/general/broadband-deployment-data-fcc-form-477">FCC.</a></p>
+        <p>Recent analysis has shown that there is more polarization in Internet-poor and older communities than there is among those who get their news online. One potential reason for this is talk radio. It is available everywhere in America and is listened to by most of the local population. </p> <p>In the map below, we are comparing the coverage between conservative (Rush Limbaugh and Glenn Beck) and liberal (FAS) radio shows. The choropleth shows percent access to broadband as of December 2016, reported by the <a href="https://www.fcc.gov/general/broadband-deployment-data-fcc-form-477">FCC.</a></p>
       </div>
     </div>       
     <div class="row">
@@ -79,14 +79,14 @@
           var Broadband = d3.map();
 
           var color = d3.scaleThreshold()
-              color.domain([0, 100])
-              .range(d3.schemeYlGnBu[9]);
+              color.domain([0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100])
+              .range(d3.schemePuBuGn[9]);
           var colorStations = "#000";
           var colorLimbaugh = "#D74C5F";
           var colorFAS = "#CF8F23";
 
           var x = d3.scaleLinear()
-            .domain([0, 100])
+            .domain([0, 80])
             .rangeRound([600, 780]);
           var scaleRadius= d3.scaleLinear()
             .domain([100,  10000000])
@@ -281,12 +281,12 @@
             .attr("fill", "#000")
             .attr("text-anchor", "start")
             .attr("font-weight", "bold")
-            .text("Broadband access");
+            .text("No access to broadband");
 
           legend.call(d3.axisBottom(x)
             .tickSize(13)
-            .ticks(3)
-            .tickFormat(function(x, i) { return i ? x : x  + "%";})
+            // .ticks(3)
+            .tickFormat(function(x) { return x  + "%";})
             .tickValues(x.domain()))
           .select(".domain")
             .remove();
@@ -300,7 +300,6 @@
           // interplate data from unemployment.csv
           function row(d) {
             Broadband.set(d.CensusId, +d.percent_total_population*100);
-            d.broadband = +d.percent_total_population;
             return d;
           }
           function ready(error, us) {
@@ -317,7 +316,7 @@
                 .data(topojson.feature(us, us.objects.counties).features)
                 .enter().append("path")
                   //.attr("fill", function(d,i) { return color(d.rate = TotalPop.get(d.id)); })
-                  .attr("fill", function(d,i) { return color(d.rate = Broadband.get(d.id)); })
+                  .attr("fill", function(d) { return color(d.rate = Broadband.get(d.id)); })
                   .attr("opacity", 0.5)
                   .attr("d", path)
                   .on("mouseover", function(){ 
