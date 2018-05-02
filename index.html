@@ -45,7 +45,7 @@
     </div>
     <div class="row">
       <div class="one-half column" style="margin-top: 5%">
-        <p>Recent analysis has shown that there is more polarization in Internet-poor and older communities than there is among those who get their news online. One potential reason for this is talk radio. It is available everywhere in America and is listened to by most of the local population. </p> <p>In the map below, we are comparing the coverage between conservative (Rush Limbaugh and Glenn Beck) and liberal (FAS) radio shows. The choropleth shows total population as of August, 2016, taken from the <a href="https://www.bls.gov/lau/#tables">Bureau of Labor Statistics.</a></p>
+        <p>Recent analysis has shown that there is more polarization in Internet-poor and older communities than there is among those who get their news online. One potential reason for this is talk radio. It is available everywhere in America and is listened to by most of the local population. </p> <p>In the map below, we are comparing the coverage between conservative (Rush Limbaugh and Glenn Beck) and liberal (FAS) radio shows. The choropleth shows total access to broadband as of December 2016, reported by the <a href="https://www.fcc.gov/general/broadband-deployment-data-fcc-form-477">FCC.</a></p>
       </div>
     </div>       
     <div class="row">
@@ -74,26 +74,19 @@
           var limbaughCountMax  = 0;
           var maxDiff =0;
           var minDiff = 2;
-
           var width  = 960,height = 500;
           var rateById = d3.map();
+          var Broadband = d3.map();
 
           var color = d3.scaleThreshold()
-              color.domain([0, 100, 1000, 10000, 100000, 1000000,  10000000])
+              color.domain([0, 100])
               .range(d3.schemeYlGnBu[9]);
-
           var colorStations = "#000";
           var colorLimbaugh = "#D74C5F";
           var colorFAS = "#CF8F23";
 
-          var Unemployment = d3.map();
-
-          var TotalPop = d3.map();
-          var Broadband = d3.map();
-          var Poverty = d3.map();
-
           var x = d3.scaleLinear()
-            .domain([1000, 10000000])
+            .domain([0, 100])
             .rangeRound([600, 780]);
           var scaleRadius= d3.scaleLinear()
             .domain([100,  10000000])
@@ -110,7 +103,7 @@
 
           //load json!
           var marketInfo = JSON.parse(market);
-          console.dir(marketInfo);
+          // console.dir(marketInfo);
 
           function calculateScore(marketObject){
             var libScore = marketObject.fasPercent / fasCountMax;
@@ -192,8 +185,8 @@
                 minDiff = Math.min(amount, minDiff);
           }
 
-          console.log('fas max: ' + fasCountMax + ' limbaugh max: ' + limbaughCountMax);
-          console.log('max diff: ' + maxDiff + ' minDiff: ' + minDiff);
+          // console.log('fas max: ' + fasCountMax + ' limbaugh max: ' + limbaughCountMax);
+          // console.log('max diff: ' + maxDiff + ' minDiff: ' + minDiff);
           window.setInterval(handleRadioScan, 15000);
           //handleRadioScan();
           //document.getElementById("radioKnob").onclick = handleRadioScan();
@@ -288,31 +281,25 @@
             .attr("fill", "#000")
             .attr("text-anchor", "start")
             .attr("font-weight", "bold")
-            .text("Total Population");
-            // .text("Poverty rate");
+            .text("Broadband access");
 
           legend.call(d3.axisBottom(x)
             .tickSize(13)
             .ticks(3)
-            // .tickFormat(function(x, i) { return i ? x : x ; })
+            .tickFormat(function(x, i) { return i ? x : x  + "%";})
             .tickValues(x.domain()))
           .select(".domain")
             .remove();
 
 
           d3.queue()
-              .defer(d3.json, "us-counties.json")
-              .defer(d3.csv, "unemployment_broadband.csv", row)
+              .defer(d3.json, "data/us-counties.json")
+              .defer(d3.csv, "data/broadband.csv", row)
               .await(ready);
 
           // interplate data from unemployment.csv
           function row(d) {
-
-            Unemployment.set(d.CensusId, +d.Unemployment);
-            TotalPop.set(d.CensusId, +d.TotalPop);
             Broadband.set(d.CensusId, +d.percent_total_population*100);
-            d.Unemployment = +d.Unemployment;
-            d.TotalPop = +d.TotalPop;
             d.broadband = +d.percent_total_population;
             return d;
           }
@@ -324,7 +311,6 @@
             var path = d3.geoPath(projection);
 
             function loadMap() {
-              // -------------------------------------------- Unemployment
               svg.append("g")
                   .attr("class", "counties")
                 .selectAll("path")
@@ -395,7 +381,7 @@
                       var talkTotal = d.fasPercent + d.limbaughPercent;
                       var liberalPercent = d.fasPercent / talkTotal;
                       var conservativePercent = d.limbaughPercent / talkTotal;
-                      console.log(liberalPercent, conservativePercent);
+                      // console.log(liberalPercent, conservativePercent);
                       var description = d.name + ' \n Liberal share: ' + Math.round(liberalPercent*100) + '%' + ' \n Conservative share: ' + Math.round(conservativePercent*100) + '%';
                       d3.select("#hovering").text(description);
                       d3.select(this).style("stroke-width", 1);
@@ -424,14 +410,13 @@
 
           }
 
-
-          d3.interval( function(){ 
-            d3.json('https://api.particle.io/v1/devices/270021001247363333343437/reading?access_token=6f49a6afc9c2209535c1bd59d9153cc4d3ab49b1', function(error, particleData){
-              var sliderValue = scaleParticle(particleData.result).toFixed(2);
-              document.getElementById("scoreSlider").value = sliderValue;
-              updateSlider(sliderValue);
-            });     
-          }, 500);
+          // d3.interval( function(){ 
+          //   d3.json('https://api.particle.io/v1/devices/270021001247363333343437/reading?access_token=6f49a6afc9c2209535c1bd59d9153cc4d3ab49b1', function(error, particleData){
+          //     var sliderValue = scaleParticle(particleData.result).toFixed(2);
+          //     document.getElementById("scoreSlider").value = sliderValue;
+          //     updateSlider(sliderValue);
+          //   });     
+          // }, 500);
          
           document.getElementById("scoreSlider").oninput = function () {
             updateSlider(this.value);
