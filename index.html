@@ -33,6 +33,7 @@
 <script src="https://d3js.org/d3-geo.v1.min.js"></script>
 <script src="https://d3js.org/d3-geo-projection.v2.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script src="https://d3js.org/d3-timer.v1.min.js"></script>
 
   <!-- Primary Page Layout
   –––––––––––––––––––––––––––––––––––––––––––––––––– -->
@@ -88,8 +89,14 @@
           var Unemployment = d3.map();
           var TotalPop = d3.map();
           var x = d3.scaleLinear()
+            .domain([1000, 10000000])
+            .rangeRound([600, 780]);
+          var scaleRadius= d3.scaleLinear()
             .domain([100,  10000000])
-            .rangeRound([600, 800]);
+            .range([2.5, 15]);
+          var scaleParticle= d3.scaleLinear()
+            .domain([1,  4095])
+            .range([-1, 1]);
 
           var radioScan = false;
             //handleRadioScan();
@@ -128,6 +135,7 @@
             //console.log("amount: " + amount);
 
             value = document.getElementById("scoreSlider").value;
+
             if(Math.abs(value)<0.1){
                 value = 0;
             }
@@ -266,7 +274,8 @@
             .attr("height", 8)
             .attr("x", function(d) { return x(d[0]); })
             .attr("width", function(d) { return x(d[1]) - x(d[0]); })
-            .attr("fill", function(d) { return color(d[0]); });
+            .attr("fill", function(d) { return color(d[0]); })
+            .style("opacity", 0.5);
 
           legend.append("text")
             .attr("class", "caption")
@@ -280,8 +289,9 @@
 
           legend.call(d3.axisBottom(x)
             .tickSize(13)
-            .tickFormat(function(x, i) { return i ? x : x ; })
-            .tickValues(color.domain()))
+            .ticks(3)
+            // .tickFormat(function(x, i) { return i ? x : x ; })
+            .tickValues(x.domain()))
           .select(".domain")
             .remove();
 
@@ -314,7 +324,7 @@
                 .data(topojson.feature(us, us.objects.counties).features)
                 .enter().append("path")
                   .attr("fill", function(d,i) { return color(d.rate = TotalPop.get(d.id)); })
-                  .attr("opacity", 0.6)
+                  .attr("opacity", 0.5)
                   .attr("d", path)
                   .on("mouseover", function(){ 
                       d3.select(this).style("fill", "rgba(0,0,0,0.5)"); 
@@ -348,20 +358,11 @@
 
                 market.append("circle")
                   .attr("r", function(d){
-                    //console.log("adding limbaugh market: " + d.limbaughCount);
-                    console.log("adding market, population: " + d.population + " radius: " + d.population/50000);
-                    //console.log("adding market, population: ");
-                    //return 5;
-                    return d.population/600000;
-                    //return 5*(d.limbaughCount + d.fasCount);
-                    //return 4;
+                    // return d.population/600000;
+                    return  scaleRadius(d.population); 
                   })
                   .attr("class", "knob")
                   .style("opacity", 0.8)
-                  .style("stroke", function(d){
-                      amount = calculateScore(d);
-                      return lerpColor('#ff0000', '#0000ff', amount);  
-                  })
                   // .style("stroke-dasharray", function(d){
                   //     amount = calculateScore(d);
                   //     if (amount > 0.5) {
@@ -374,7 +375,7 @@
                   .style("stroke-width", 1.5)
                   .style("fill", function(d){
                       amount = calculateScore(d);
-                      return lerpColor('#000', '#fff', amount);  
+                      return lerpColor('#a02ea0', '#1e2db2', amount);  
                   })
                   .attr("score",function(d){
                       mount = calculateScore(d);
@@ -386,7 +387,7 @@
                       var liberalPercent = d.fasPercent / talkTotal;
                       var conservativePercent = d.limbaughPercent / talkTotal;
                       console.log(liberalPercent, conservativePercent);
-                      var description = d.name + ' \nliberal share: ' + Math.round(liberalPercent*100) + '%' + '\nconservative share: ' + Math.round(conservativePercent*100) + '%';
+                      var description = d.name + ' \n Liberal share: ' + Math.round(liberalPercent*100) + '%' + ' \n Conservative share: ' + Math.round(conservativePercent*100) + '%';
                       d3.select("#hovering").text(description);
                       d3.select(this).style("stroke-width", 1);
                       d3.select("#playing").text(" ");
@@ -416,17 +417,24 @@
 
           }
 
+
+          d3.interval( function(){ 
+            d3.json('https://api.particle.io/v1/devices/270021001247363333343437/reading?access_token=6f49a6afc9c2209535c1bd59d9153cc4d3ab49b1', function(error, particleData){
+              var sliderValue = scaleParticle(particleData.result).toFixed(2);
+              document.getElementById("scoreSlider").value = sliderValue;
+              updateSlider(sliderValue);
+            });     
+          }, 500);
+         
           document.getElementById("scoreSlider").oninput = function () {
             updateSlider(this.value);
           }
-
+ 
           function updateSlider(value){
             cutoff = 0.1;
             if(Math.abs(value)<cutoff){
               value = 0;
             }
-
-            // d3.selectAll(".fas").transition().delay(100).style("opacity", 1);
             d3.selectAll(".station").transition().delay(100).style("opacity", 0);
 
             d3.selectAll(".Kfirst")
@@ -460,8 +468,6 @@
                         return 0.0;
                       }
                 })
-            // var iframe = document.getElementById('radioPlayer')[0];
-            // iframe.contentWindow.postMessage('{"method": "setVolume", "value":0}','*');
           }
 
         </script>
