@@ -44,7 +44,7 @@
     </div>
     <div class="row">
       <div class="one-half column" style="margin-top: 5%">
-        <p>Recent analysis has shown that there is more polarization in Internet-poor and older communities than there is among those who get their news online. One potential reason for this is talk radio. It is available everywhere in America and is listened to by most of the local population. </p> <p>In the map below, we are comparing the coverage between conservative (Rush Limbaugh and Glenn Beck) and liberal (FAS) radio shows. The choropleth shows Unemployment rates as of August, 2016, taken from the <a href="https://www.bls.gov/lau/#tables">Bureau of Labor Statistics.</a></p>
+        <p>Recent analysis has shown that there is more polarization in Internet-poor and older communities than there is among those who get their news online. One potential reason for this is talk radio. It is available everywhere in America and is listened to by most of the local population. </p> <p>In the map below, we are comparing the coverage between conservative (Rush Limbaugh and Glenn Beck) and liberal (FAS) radio shows. The choropleth shows total population as of August, 2016, taken from the <a href="https://www.bls.gov/lau/#tables">Bureau of Labor Statistics.</a></p>
       </div>
     </div>       
     <div class="row">
@@ -78,17 +78,18 @@
           var rateById = d3.map();
 
           var color = d3.scaleThreshold()
-              color.domain([0, 5, 10, 15, 20, 25, 30, 35, 40])
-              .range(d3.schemePuBuGn[9]);
+              color.domain([0, 100, 1000, 10000, 100000, 1000000,  10000000])
+              .range(d3.schemeYlGnBu[9]);
 
           var colorStations = "#000";
           var colorLimbaugh = "#D74C5F";
           var colorFAS = "#CF8F23";
 
           var Unemployment = d3.map();
+          var TotalPop = d3.map();
           var x = d3.scaleLinear()
-            .domain([0, 40])
-            .rangeRound([600, 780]);
+            .domain([100,  10000000])
+            .rangeRound([600, 800]);
 
           var radioScan = false;
             //handleRadioScan();
@@ -274,12 +275,12 @@
             .attr("fill", "#000")
             .attr("text-anchor", "start")
             .attr("font-weight", "bold")
-            .text("Unemployment rate");
+            .text("Total Population");
             // .text("Poverty rate");
 
           legend.call(d3.axisBottom(x)
             .tickSize(13)
-            .tickFormat(function(x, i) { return i ? x : x + "%"; })
+            .tickFormat(function(x, i) { return i ? x : x ; })
             .tickValues(color.domain()))
           .select(".domain")
             .remove();
@@ -293,7 +294,9 @@
           // interplate data from unemployment.csv
           function row(d) {
             Unemployment.set(d.CensusId, +d.Unemployment);
-            d.Unemployment = +d.Unemployment
+            TotalPop.set(d.CensusId, +d.TotalPop);
+            d.Unemployment = +d.Unemployment;
+            d.TotalPop = +d.TotalPop;
             return d;
           }
           function ready(error, us) {
@@ -310,16 +313,17 @@
                 .selectAll("path")
                 .data(topojson.feature(us, us.objects.counties).features)
                 .enter().append("path")
-                  .attr("fill", function(d,i) { return color(d.rate = Unemployment.get(d.id)); })
+                  .attr("fill", function(d,i) { return color(d.rate = TotalPop.get(d.id)); })
+                  .attr("opacity", 0.6)
                   .attr("d", path)
                   .on("mouseover", function(){ 
                       d3.select(this).style("fill", "rgba(0,0,0,0.5)"); 
                   })
                   .on("mouseout", function(){ 
-                      d3.select(this).style("fill", function(d) { return color(d.rate = Unemployment.get(d.id)); })
+                      d3.select(this).style("fill", function(d) { return color(d.rate = TotalPop.get(d.id)); })
                   })  
                 .append("title")
-                  .text(function(d) { return d.rate + "%"; });
+                  .text(function(d) { return d.rate; });
 
               svg.append("path")
                   .datum(topojson.mesh(us, us.objects.states, function(a, b) { return a !== b; }))
@@ -342,62 +346,34 @@
                       return "translate(" + projection([d.long, d.lat]) + ")"; }
                   });
 
-                //Limbaugh   
-                market.append("circle")
-                  .attr("r", 4)
-                  .attr("class", "limbaugh")
-                  .style("opacity", 0)
-                  .style("stroke", "#000")
-                  .style("stroke-width", 0)
-                  .style("fill", colorLimbaugh)
-                  .on("mouseover", function(d){ 
-                      d3.select(this).style("fill", "rgba(255, 255, 255, 1)"); 
-                      d3.select("#hovering").text(d.name);
-                      d3.select(this).style("stroke-width", 1);
-                  })              
-                  .on("mouseout", function(d){ 
-                      d3.select(this).style("fill", "rgba(255, 255, 255, 0.7)"); 
-                      d3.select("#hovering").text(" ");
-                      d3.select(this).style("stroke-width", 0);
-                  })
-
-                //FAS
-                market.append("circle")
-                  .attr("r", 4)
-                  .attr("class", "fas")
-                  .style("opacity", 0)
-                  .style("stroke", "#000")
-                  .style("stroke-width", 0)
-                  .style("fill", colorFAS)
-                  .on("mouseover", function(d){ 
-                      d3.select(this).style("fill", "rgba(173, 140, 171, 1)"); 
-                      d3.select("#hovering").text(d.name);
-                      d3.select(this).style("stroke-width", 1);
-                  })              
-                  .on("mouseout", function(d){ 
-                      d3.select(this).style("fill", "rgba(173, 140, 171, 0.8)"); 
-                      d3.select("#hovering").text(" ");
-                      d3.select(this).style("stroke-width", 0);
-                  })
-
-                //Knob
                 market.append("circle")
                   .attr("r", function(d){
                     //console.log("adding limbaugh market: " + d.limbaughCount);
                     console.log("adding market, population: " + d.population + " radius: " + d.population/50000);
                     //console.log("adding market, population: ");
                     //return 5;
-                    return d.population/200000;
+                    return d.population/600000;
                     //return 5*(d.limbaughCount + d.fasCount);
                     //return 4;
                   })
                   .attr("class", "knob")
-                  .style("opacity", 0)
-                  .style("stroke", "#000")
-                  .style("stroke-width", 0)
+                  .style("opacity", 0.8)
+                  .style("stroke", function(d){
+                      amount = calculateScore(d);
+                      return lerpColor('#ff0000', '#0000ff', amount);  
+                  })
+                  // .style("stroke-dasharray", function(d){
+                  //     amount = calculateScore(d);
+                  //     if (amount > 0.5) {
+                  //       return 3;
+                  //     }
+                  //     else {
+                  //       return 0;
+                  //     }
+                  // })
+                  .style("stroke-width", 1.5)
                   .style("fill", function(d){
                       amount = calculateScore(d);
-                      console.log(d);
                       return lerpColor('#000', '#fff', amount);  
                   })
                   .attr("score",function(d){
@@ -406,7 +382,11 @@
                   })
                   .on("mouseover", function(d){ 
                       //d3.select(this).style("fill", "rgba(173, 140, 171, 1)"); 
-                      var description = d.name + ' \nliberal share: ' + Math.round((d.fasPercent*100)/100) + '%' + '\nconservative share: ' + Math.round((d.limbaughPercent*100)/100) + '%';
+                      var talkTotal = d.fasPercent + d.limbaughPercent;
+                      var liberalPercent = d.fasPercent / talkTotal;
+                      var conservativePercent = d.limbaughPercent / talkTotal;
+                      console.log(liberalPercent, conservativePercent);
+                      var description = d.name + ' \nliberal share: ' + Math.round(liberalPercent*100) + '%' + '\nconservative share: ' + Math.round(conservativePercent*100) + '%';
                       d3.select("#hovering").text(description);
                       d3.select(this).style("stroke-width", 1);
                       d3.select("#playing").text(" ");
@@ -417,27 +397,6 @@
                       d3.select(this).style("stroke-width", 0);
                       d3.select("#playing").text(" ");
                   })
-
-                  d3.selectAll('.limbaugh')
-                      .filter(function(d) { return d.number < 50 })
-                        .attr("class", "Lfirst");
-                  d3.selectAll('.limbaugh')
-                      .filter(function(d) { return d.number > 50 && d.number < 100 })
-                        .attr("class", "Lsecond");
-                  d3.selectAll('.limbaugh')
-                      .filter(function(d) { return d.number > 100 && d.number < 200 })
-                        .attr("class", "Lthird");
-
-
-                  d3.selectAll('.fas')
-                      .filter(function(d) { return d.number < 50 })
-                        .attr("class", "Ffirst");
-                  d3.selectAll('.fas')
-                      .filter(function(d) { return d.number > 50 && d.number < 100 })
-                        .attr("class", "Fsecond");
-                  d3.selectAll('.fas')
-                      .filter(function(d) { return d.number > 100 && d.number < 200 })
-                        .attr("class", "Fthird");
 
                   d3.selectAll('.knob')
                       .filter(function(d) { return d.number < 50 })
@@ -470,20 +429,12 @@
             // d3.selectAll(".fas").transition().delay(100).style("opacity", 1);
             d3.selectAll(".station").transition().delay(100).style("opacity", 0);
 
-            d3.selectAll(".Lfirst").transition().style("opacity", 0);
-            d3.selectAll(".Lsecond").transition().style("opacity", 0);
-            d3.selectAll(".Lthird").transition().style("opacity", 0);
-
-            d3.selectAll(".Ffirst").transition().style("opacity", 0);
-            d3.selectAll(".Fsecond").transition().style("opacity", 0);
-            d3.selectAll(".Fthird").transition().style("opacity", 0);
-
             d3.selectAll(".Kfirst")
                 .transition()
                 .style("opacity", function(d){
                       var inside = calculateInside(d);
                       if(inside){
-                        return 0.5;
+                        return 0.8;
                       }else{
                         return 0.0;
                       }
@@ -494,7 +445,7 @@
               .style("opacity", function(d){
                       var inside = calculateInside(d);
                       if(inside){
-                        return 0.5;
+                        return 0.8;
                       }else{
                         return 0.0;
                       }
@@ -504,7 +455,7 @@
               .style("opacity", function(d){
                       var inside = calculateInside(d);
                       if(inside){
-                        return 0.7;
+                        return 0.8;
                       }else{
                         return 0.0;
                       }
