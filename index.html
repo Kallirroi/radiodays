@@ -80,7 +80,7 @@
 
           var color = d3.scaleThreshold()
               color.domain([0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100])
-              .range(d3.schemePuBuGn[9]);
+              .range(d3.schemeGnBu[9]);
           var colorStations = "#000";
           var colorLimbaugh = "#D74C5F";
           var colorFAS = "#CF8F23";
@@ -281,11 +281,11 @@
             .attr("fill", "#000")
             .attr("text-anchor", "start")
             .attr("font-weight", "bold")
-            .text("No access to broadband");
+            .text("Percent without access to broadband");
 
           legend.call(d3.axisBottom(x)
             .tickSize(13)
-            // .ticks(3)
+            .ticks(2)
             .tickFormat(function(x) { return x  + "%";})
             .tickValues(x.domain()))
           .select(".domain")
@@ -317,7 +317,7 @@
                 .enter().append("path")
                   //.attr("fill", function(d,i) { return color(d.rate = TotalPop.get(d.id)); })
                   .attr("fill", function(d) { return color(d.rate = Broadband.get(d.id)); })
-                  .attr("opacity", 0.5)
+                  .attr("opacity", 0.4)
                   .attr("d", path)
                   .on("mouseover", function(){ 
                       d3.select(this).style("fill", "rgba(0,0,0,0.5)"); 
@@ -409,13 +409,13 @@
 
           }
 
-          // d3.interval( function(){ 
-          //   d3.json('https://api.particle.io/v1/devices/270021001247363333343437/reading?access_token=6f49a6afc9c2209535c1bd59d9153cc4d3ab49b1', function(error, particleData){
-          //     var sliderValue = scaleParticle(particleData.result).toFixed(2);
-          //     document.getElementById("scoreSlider").value = sliderValue;
-          //     updateSlider(sliderValue);
-          //   });     
-          // }, 500);
+          d3.interval( function(){ 
+            d3.json('https://api.particle.io/v1/devices/270021001247363333343437/reading?access_token=6f49a6afc9c2209535c1bd59d9153cc4d3ab49b1', function(error, particleData){
+              var sliderValue = scaleParticle(particleData.result).toFixed(2);
+              document.getElementById("scoreSlider").value = sliderValue;
+              updateSlider(sliderValue);
+            });     
+          }, 500);
          
           document.getElementById("scoreSlider").oninput = function () {
             updateSlider(this.value);
