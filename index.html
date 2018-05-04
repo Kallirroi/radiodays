@@ -131,6 +131,8 @@
             //var amount = libScore/(libScore + conScore);
             //console.log("amount: " + amount);
 
+
+
             value = document.getElementById("scoreSlider").value;
 
             if(Math.abs(value)<0.1){
@@ -153,15 +155,31 @@
               }                        
             }
 
+
+
+
+
             if(value == 0){
               inside=true;
             }
-            /*
-            if(marketObject.name=='DAYTON'){
+            
+            if(marketObject.name=='SAN DIEGO'){
 
                 console.log('market: ' + marketObject.name + ' value: ' + value + ' score: ' + amount + ' inside: ' + inside); 
             }
-            */
+
+            //make yellows only appear if slider is in center:
+            am = calculateScore(marketObject);
+            if(am==-1){
+              if(value == 0){
+                inside = true;
+              }else{
+                inside = false;
+              }
+            }
+
+
+            
             return inside;
           }
 
@@ -369,6 +387,9 @@
                   .style("stroke-width", 1.5)
                   .style("fill", function(d){
                       amount = calculateScore(d);
+                      if(amount == -1){
+                        return '#ffff00'
+                      }
                       return lerpColor('#a02ea0', '#1e2db2', amount);  
                   })
                   .attr("score",function(d){
@@ -380,8 +401,13 @@
                       var talkTotal = d.fasPercent + d.limbaughPercent;
                       var liberalPercent = d.fasPercent / talkTotal;
                       var conservativePercent = d.limbaughPercent / talkTotal;
+
+                      if(talkTotal == 0){
+                        liberalPercent = 0;
+                        conservativePercent = 0;
+                      }
                       // console.log(liberalPercent, conservativePercent);
-                      var description = d.name + ' \n Liberal share: ' + Math.round(liberalPercent*100) + '%' + ' \n Conservative share: ' + Math.round(conservativePercent*100) + '%';
+                      var description = d.name + ' \n Liberal share: ' + Math.round(liberalPercent*100) + '%' + ' \n Conservative share: ' + Math.round(conservativePercent*100) + '%' + ' population: ' + d.population;
                       d3.select("#hovering").text(description);
                       d3.select(this).style("stroke-width", 1);
                       d3.select("#playing").text(" ");
@@ -397,10 +423,10 @@
                       .filter(function(d) { return d.number < 50 })
                         .attr("class", "Kfirst");
                   d3.selectAll('.knob')
-                      .filter(function(d) { return d.number > 50 && d.number < 100 })
+                      .filter(function(d) { return d.number >= 50 && d.number < 100 })
                         .attr("class", "Ksecond");
                   d3.selectAll('.knob')
-                      .filter(function(d) { return d.number > 100 && d.number < 200 })
+                      .filter(function(d) { return d.number >= 100 }) //there were markets above 200
                         .attr("class", "Kthird");
               }
               drawMarkets();
@@ -422,6 +448,7 @@
           }
  
           function updateSlider(value){
+            console.log('updating slider!');
             cutoff = 0.1;
             if(Math.abs(value)<cutoff){
               value = 0;
@@ -431,6 +458,7 @@
             d3.selectAll(".Kfirst")
                 .transition()
                 .style("opacity", function(d){
+                      //console.log("first " + d.name)
                       var inside = calculateInside(d);
                       if(inside){
                         return 0.8;
@@ -442,6 +470,7 @@
            d3.selectAll(".Ksecond")   
               .transition() 
               .style("opacity", function(d){
+                      //console.log("second " + d.name)
                       var inside = calculateInside(d);
                       if(inside){
                         return 0.8;
@@ -452,6 +481,7 @@
            d3.selectAll(".Kthird")   
               .transition() 
               .style("opacity", function(d){
+                      //console.log("third " + d.name)
                       var inside = calculateInside(d);
                       if(inside){
                         return 0.8;
